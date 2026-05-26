@@ -15,6 +15,7 @@ export default function Home() {
   const [busqueda, setBusqueda] = useState("");
 
   const [user, setUser] = useState<any>(null);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   async function cerrarSesion() {
     await supabase.auth.signOut();
@@ -44,19 +45,39 @@ export default function Home() {
       return;
     }
 
-    const { error } = await supabase.from("productos").insert([
-      {
-        nombre,
-        tipo,
-        presentacion,
-        kilos: Number(kilos),
-        precio: Number(precio),
-      },
-    ]);
+    if (editandoId) {
+      const { error } = await supabase
+        .from("productos")
+        .update({
+          nombre,
+          tipo,
+          presentacion,
+          kilos: Number(kilos),
+          precio: Number(precio),
+        })
+        .eq("id", editandoId);
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      setEditandoId(null);
+    } else {
+      const { error } = await supabase.from("productos").insert([
+        {
+          nombre,
+          tipo,
+          presentacion,
+          kilos: Number(kilos),
+          precio: Number(precio),
+        },
+      ]);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
     }
 
     setNombre("");
@@ -72,6 +93,16 @@ export default function Home() {
     await supabase.from("productos").delete().eq("id", id);
 
     obtenerProductos();
+  }
+
+  function editarProducto(producto: any) {
+    setEditandoId(producto.id);
+
+    setNombre(producto.nombre || "");
+    setTipo(producto.tipo || "");
+    setPresentacion(producto.presentacion || "");
+    setKilos(producto.kilos?.toString() || "");
+    setPrecio(producto.precio?.toString() || "");
   }
 
   const productosFiltrados = productos.filter((producto) =>
@@ -130,7 +161,9 @@ export default function Home() {
             marginBottom: 30,
           }}
         >
-          <h2>Agregar Producto</h2>
+          <h2>
+            {editandoId ? "Editar Producto" : "Agregar Producto"}
+          </h2>
 
           <input
             placeholder="Nombre"
@@ -199,7 +232,7 @@ export default function Home() {
               cursor: "pointer",
             }}
           >
-            Agregar Producto
+            {editandoId ? "Guardar Cambios" : "Agregar Producto"}
           </button>
         </div>
       )}
@@ -253,21 +286,39 @@ export default function Home() {
             </p>
 
             {user && (
-              <button
-                onClick={() => eliminarProducto(producto.id)}
-                style={{
-                  marginTop: 10,
-                  backgroundColor: "red",
-                  color: "white",
-                  border: "none",
-                  padding: 10,
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  width: "100%",
-                }}
-              >
-                Eliminar
-              </button>
+              <>
+                <button
+                  onClick={() => eliminarProducto(producto.id)}
+                  style={{
+                    marginTop: 10,
+                    backgroundColor: "red",
+                    color: "white",
+                    border: "none",
+                    padding: 10,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  Eliminar
+                </button>
+
+                <button
+                  onClick={() => editarProducto(producto)}
+                  style={{
+                    marginTop: 10,
+                    backgroundColor: "orange",
+                    color: "white",
+                    border: "none",
+                    padding: 10,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  Editar
+                </button>
+              </>
             )}
           </div>
         ))}
