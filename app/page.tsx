@@ -16,6 +16,11 @@ export default function Home() {
 
   const [user, setUser] = useState<any>(null);
 
+  async function cerrarSesion() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
@@ -75,14 +80,46 @@ export default function Home() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1
+      <div
         style={{
-          textAlign: "center",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: 30,
         }}
       >
-        Lista de Productos
-      </h1>
+        <h1>Lista de Productos</h1>
+
+        {user ? (
+          <button
+            onClick={cerrarSesion}
+            style={{
+              backgroundColor: "#111",
+              color: "white",
+              border: "none",
+              padding: "10px 16px",
+              borderRadius: 8,
+              cursor: "pointer",
+            }}
+          >
+            Cerrar sesión
+          </button>
+        ) : (
+          <button
+            onClick={() => (window.location.href = "/login")}
+            style={{
+              backgroundColor: "green",
+              color: "white",
+              border: "none",
+              padding: "10px 16px",
+              borderRadius: 8,
+              cursor: "pointer",
+            }}
+          >
+            Iniciar sesión
+          </button>
+        )}
+      </div>
 
       {user && (
         <div
