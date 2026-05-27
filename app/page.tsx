@@ -11,6 +11,7 @@ export default function Home() {
   const [presentacion, setPresentacion] = useState("");
   const [kilos, setKilos] = useState("");
   const [precio, setPrecio] = useState("");
+  const [imagen, setImagen] = useState<File | null>(null);
 
   const [busqueda, setBusqueda] = useState("");
 
@@ -44,7 +45,26 @@ export default function Home() {
       alert("Completa nombre y precio");
       return;
     }
+let imagenUrl = "";
 
+if (imagen) {
+  const nombreArchivo = `${Date.now()}-${imagen.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("productos")
+    .upload(nombreArchivo, imagen);
+
+  if (uploadError) {
+    alert(uploadError.message);
+    return;
+  }
+
+  const { data } = supabase.storage
+    .from("productos")
+    .getPublicUrl(nombreArchivo);
+
+  imagenUrl = data.publicUrl;
+}
     if (editandoId) {
       const { error } = await supabase
         .from("productos")
@@ -54,6 +74,7 @@ export default function Home() {
           presentacion,
           kilos: Number(kilos),
           precio: Number(precio),
+          imagen: imagenUrl, 
         })
         .eq("id", editandoId);
 
@@ -71,6 +92,7 @@ export default function Home() {
           presentacion,
           kilos: Number(kilos),
           precio: Number(precio),
+          imagen: imagenUrl,
         },
       ]);
 
@@ -110,7 +132,13 @@ export default function Home() {
   );
 
   return (
-    <div style={{ padding: 20 }}>
+   <div
+  style={{
+    padding: 20,
+    backgroundColor: "#f5f5f5",
+    minHeight: "100vh",
+  }}
+>
       <div
         style={{
           display: "flex",
@@ -209,31 +237,45 @@ export default function Home() {
             }}
           />
 
-          <input
-            placeholder="Precio"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
-            }}
-          />
+       <input
+  placeholder="Precio"
+  value={precio}
+  onChange={(e) => setPrecio(e.target.value)}
+  style={{
+    width: "100%",
+    marginBottom: 10,
+    padding: 10,
+  }}
+/>
 
-          <button
-            onClick={agregarProducto}
-            style={{
-              padding: 12,
-              width: "100%",
-              backgroundColor: "green",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
-          >
-            {editandoId ? "Guardar Cambios" : "Agregar Producto"}
-          </button>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImagen(e.target.files[0]);
+    }
+  }}
+  style={{
+    width: "100%",
+    marginBottom: 10,
+  }}
+/>
+
+     <button
+  onClick={agregarProducto}
+  style={{
+    padding: 12,
+    width: "100%",
+    backgroundColor: "green",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+  }}
+>
+  {editandoId ? "Guardar Cambios" : "Agregar Producto"}
+</button>
         </div>
       )}
 
@@ -258,22 +300,66 @@ export default function Home() {
         }}
       >
         {productosFiltrados.map((producto) => (
-          <div
-            key={producto.id}
+         <div
+         key={producto.id}
+         style={{
+         border: "1px solid #e5e7eb",
+         borderRadius: 20,
+         padding: 20,
+         boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+         transition: "0.2s",
+         backgroundColor: "white",
+         }}
+         onMouseEnter={(e) => {
+         e.currentTarget.style.transform = "translateY(-5px)";
+         }}
+         onMouseLeave={(e) => {
+         e.currentTarget.style.transform = "translateY(0px)";
+         }}
+       >
+           {producto.imagen && (
+  <img
+    src={producto.imagen}
+    alt={producto.nombre}
+    style={{
+      width: "100%",
+      height: 200,
+      objectFit: "cover",
+      borderRadius: 10,
+      marginBottom: 10,
+    }}
+  />
+)}
+            <h2
             style={{
-              border: "1px solid #ccc",
-              borderRadius: 15,
-              padding: 20,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h2>{producto.nombre}</h2>
+            fontSize: 28,
+            fontWeight: "bold",
+            marginBottom: 10,
+          }}
+       >
+           {producto.nombre}
+           </h2>  
 
-            <p>Tipo: {producto.tipo}</p>
+            <p
+  style={{
+    marginBottom: 8,
+    color: "#444",
+  }}
+>Tipo: {producto.tipo}</p>
 
-            <p>Presentación: {producto.presentacion}</p>
+            <p
+  style={{
+    marginBottom: 8,
+    color: "#444",
+  }}
+>Presentación: {producto.presentacion}</p>
 
-            <p>Kg: {producto.kilos}</p>
+            <p
+  style={{
+    marginBottom: 8,
+    color: "#444",
+  }}
+>Kg: {producto.kilos}</p>
 
             <p
               style={{
@@ -291,7 +377,7 @@ export default function Home() {
                   onClick={() => eliminarProducto(producto.id)}
                   style={{
                     marginTop: 10,
-                    backgroundColor: "red",
+                    backgroundColor: "#dc2626",
                     color: "white",
                     border: "none",
                     padding: 10,
@@ -307,7 +393,7 @@ export default function Home() {
                   onClick={() => editarProducto(producto)}
                   style={{
                     marginTop: 10,
-                    backgroundColor: "orange",
+                    backgroundColor: "#f59e0b",
                     color: "white",
                     border: "none",
                     padding: 10,
