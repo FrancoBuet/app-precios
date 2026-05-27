@@ -24,11 +24,17 @@ export default function Home() {
 
   const [oferta, setOferta] = useState(false);
 
+  const [mostrarMayorista, setMostrarMayorista] =
+    useState(true);
+
+  const [mostrarPublico, setMostrarPublico] =
+    useState(true);
+
   const [imagen, setImagen] = useState<File | null>(null);
 
   const [busqueda, setBusqueda] = useState("");
 
-  const [seccion, setSeccion] = useState("inicio");
+  const [seccion, setSeccion] = useState("mayorista");
 
   const [user, setUser] = useState<any>(null);
 
@@ -133,6 +139,12 @@ export default function Home() {
             precioPublico
           ),
 
+          mostrar_mayorista:
+            mostrarMayorista,
+
+          mostrar_publico:
+            mostrarPublico,
+
           oferta,
 
           imagen: imagenUrl,
@@ -168,6 +180,12 @@ export default function Home() {
               precioPublico
             ),
 
+            mostrar_mayorista:
+              mostrarMayorista,
+
+            mostrar_publico:
+              mostrarPublico,
+
             oferta,
 
             imagen: imagenUrl,
@@ -194,6 +212,10 @@ export default function Home() {
     setPrecioPublico("");
 
     setOferta(false);
+
+    setMostrarMayorista(true);
+
+    setMostrarPublico(true);
 
     setImagen(null);
 
@@ -248,6 +270,14 @@ export default function Home() {
 
     setOferta(producto.oferta || false);
 
+    setMostrarMayorista(
+      producto.mostrar_mayorista ?? true
+    );
+
+    setMostrarPublico(
+      producto.mostrar_publico ?? true
+    );
+
     if (producto.imagen) {
       setPreview(producto.imagen);
     }
@@ -264,6 +294,20 @@ export default function Home() {
     productosFiltrados =
       productosFiltrados.filter(
         (p) => p.oferta
+      );
+  }
+
+  if (seccion === "mayorista") {
+    productosFiltrados =
+      productosFiltrados.filter(
+        (p) => p.mostrar_mayorista
+      );
+  }
+
+  if (seccion === "publico") {
+    productosFiltrados =
+      productosFiltrados.filter(
+        (p) => p.mostrar_publico
       );
   }
 
@@ -285,6 +329,8 @@ export default function Home() {
             "space-between",
           alignItems: "center",
           marginBottom: 30,
+          flexWrap: "wrap",
+          gap: 15,
         }}
       >
         <div>
@@ -316,22 +362,16 @@ export default function Home() {
             onClick={() =>
               setDarkMode(!darkMode)
             }
-            style={botonHeader(
-              darkMode
-            )}
+            style={botonHeader(darkMode)}
           >
-            {darkMode
-              ? "☀️"
-              : "🌙"}
+            {darkMode ? "☀️" : "🌙"}
           </button>
 
           {user && (
             <button
               onClick={cerrarSesion}
               style={{
-                ...botonHeader(
-                  darkMode
-                ),
+                ...botonHeader(darkMode),
                 backgroundColor:
                   "#dc2626",
                 color: "white",
@@ -372,22 +412,16 @@ export default function Home() {
           onClick={() =>
             setSeccion("ofertas")
           }
-          style={menuStyle(
-            "#dc2626"
-          )}
+          style={menuStyle("#dc2626")}
         >
           🔥 Ofertas
         </button>
 
         <button
           onClick={() =>
-            setSeccion(
-              "mayorista"
-            )
+            setSeccion("mayorista")
           }
-          style={menuStyle(
-            "#2563eb"
-          )}
+          style={menuStyle("#2563eb")}
         >
           📦 Mayorista
         </button>
@@ -396,9 +430,7 @@ export default function Home() {
           onClick={() =>
             setSeccion("publico")
           }
-          style={menuStyle(
-            "#16a34a"
-          )}
+          style={menuStyle("#16a34a")}
         >
           🛒 Público
         </button>
@@ -442,9 +474,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -455,9 +485,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -468,9 +496,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -481,9 +507,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -496,9 +520,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -511,9 +533,7 @@ export default function Home() {
                   e.target.value
                 )
               }
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
 
             <input
@@ -539,9 +559,7 @@ export default function Home() {
                   );
                 }
               }}
-              style={inputStyle(
-                darkMode
-              )}
+              style={inputStyle(darkMode)}
             />
           </div>
 
@@ -567,6 +585,63 @@ export default function Home() {
 
             Producto en oferta
           </label>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+              marginTop: 15,
+              flexWrap: "wrap",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 10,
+                fontWeight: "bold",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={
+                  mostrarMayorista
+                }
+                onChange={(e) =>
+                  setMostrarMayorista(
+                    e.target.checked
+                  )
+                }
+              />
+
+              Mostrar en Mayorista
+            </label>
+
+            <label
+              style={{
+                display: "flex",
+                alignItems:
+                  "center",
+                gap: 10,
+                fontWeight: "bold",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={
+                  mostrarPublico
+                }
+                onChange={(e) =>
+                  setMostrarPublico(
+                    e.target.checked
+                  )
+                }
+              />
+
+              Mostrar en Público
+            </label>
+          </div>
 
           {preview && (
             <img
@@ -759,11 +834,9 @@ export default function Home() {
                           producto
                         )
                       }
-                      style={
-                        botonCard(
-                          "#f59e0b"
-                        )
-                      }
+                      style={botonCard(
+                        "#f59e0b"
+                      )}
                     >
                       Editar
                     </button>
@@ -774,11 +847,9 @@ export default function Home() {
                           producto.id
                         )
                       }
-                      style={
-                        botonCard(
-                          "#dc2626"
-                        )
-                      }
+                      style={botonCard(
+                        "#dc2626"
+                      )}
                     >
                       Eliminar
                     </button>
