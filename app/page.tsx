@@ -275,28 +275,30 @@ export default function Home() {
   }
 
   return (
-   <div
-  style={{
-    padding: 15,
+    <div
+      style={{
+        padding: 15,
 
-    background: darkMode
-      ? "linear-gradient(180deg, #0f172a 0%, #111827 100%)"
-      : "linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)",
+        background: darkMode
+          ? "linear-gradient(180deg, #020617 0%, #111827 100%)"
+          : "linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%)",
 
-    minHeight: "100vh",
+        minHeight: "100vh",
 
-    color: darkMode ? "white" : "#111827",
+        color: darkMode ? "white" : "#111827",
 
-    transition: "0.3s",
-  }}
->
+        transition: "0.3s",
+      }}
+    >
+      {/* HEADER */}
+
       <div
         style={{
           display: "flex",
           justifyContent:
             "space-between",
           alignItems: "center",
-          marginBottom: 25,
+          marginBottom: 30,
           flexWrap: "wrap",
           gap: 15,
         }}
@@ -304,19 +306,21 @@ export default function Home() {
         <div>
           <h1
             style={{
-              fontSize: 34,
+              fontSize: 42,
               fontWeight: "bold",
+              marginBottom: 5,
             }}
           >
-            Mi Catálogo
+            🛍️ Mi Catálogo
           </h1>
 
           <p
             style={{
               opacity: 0.7,
+              fontSize: 16,
             }}
           >
-            Mayorista & Público
+            Panel Mayorista & Público
           </p>
         </div>
 
@@ -340,7 +344,8 @@ export default function Home() {
               onClick={cerrarSesion}
               style={{
                 ...botonHeader(darkMode),
-                backgroundColor: "#dc2626",
+                background:
+                  "linear-gradient(135deg,#dc2626,#ef4444)",
                 color: "white",
               }}
             >
@@ -350,35 +355,53 @@ export default function Home() {
         </div>
       </div>
 
+      {/* MENSAJE */}
+
       {mensaje && (
         <div
           style={{
-            backgroundColor: "#d1fae5",
-            color: "#065f46",
-            padding: 14,
-            borderRadius: 12,
-            marginBottom: 20,
+            background:
+              "linear-gradient(135deg,#10b981,#34d399)",
+
+            color: "white",
+
+            padding: 16,
+
+            borderRadius: 18,
+
+            marginBottom: 25,
+
             fontWeight: "bold",
+
+            boxShadow:
+              "0 10px 25px rgba(16,185,129,0.25)",
           }}
         >
           {mensaje}
         </div>
       )}
 
+      {/* MENU */}
+
       <div
         style={{
           display: "grid",
           gridTemplateColumns:
             "repeat(auto-fit, minmax(150px, 1fr))",
-          gap: 12,
-          marginBottom: 25,
+
+          gap: 15,
+
+          marginBottom: 30,
         }}
       >
         <button
           onClick={() =>
             setSeccion("ofertas")
           }
-          style={menuStyle("#dc2626")}
+          style={menuStyle(
+            "#dc2626",
+            seccion === "ofertas"
+          )}
         >
           🔥 Ofertas
         </button>
@@ -387,7 +410,10 @@ export default function Home() {
           onClick={() =>
             setSeccion("mayorista")
           }
-          style={menuStyle("#2563eb")}
+          style={menuStyle(
+            "#2563eb",
+            seccion === "mayorista"
+          )}
         >
           📦 Mayorista
         </button>
@@ -396,41 +422,48 @@ export default function Home() {
           onClick={() =>
             setSeccion("publico")
           }
-          style={menuStyle("#16a34a")}
+          style={menuStyle(
+            "#16a34a",
+            seccion === "publico"
+          )}
         >
           🛒 Público
         </button>
       </div>
 
+      {/* FORMULARIO */}
+
       {user && (
         <div
-  style={{
-    background:
-      darkMode
-        ? "rgba(31, 41, 55, 0.7)"
-        : "rgba(255,255,255,0.75)",
+          style={{
+            background:
+              darkMode
+                ? "rgba(17,24,39,0.65)"
+                : "rgba(255,255,255,0.7)",
 
-    backdropFilter: "blur(14px)",
+            backdropFilter: "blur(16px)",
 
-    WebkitBackdropFilter: "blur(14px)",
+            WebkitBackdropFilter:
+              "blur(16px)",
 
-    borderRadius: 28,
+            borderRadius: 30,
 
-    padding: 24,
+            padding: 25,
 
-    marginBottom: 30,
+            marginBottom: 35,
 
-    border: darkMode
-      ? "1px solid rgba(255,255,255,0.06)"
-      : "1px solid rgba(255,255,255,0.5)",
+            border: darkMode
+              ? "1px solid rgba(255,255,255,0.08)"
+              : "1px solid rgba(255,255,255,0.6)",
 
-    boxShadow:
-      "0 10px 40px rgba(0,0,0,0.08)",
-  }}
->
+            boxShadow:
+              "0 15px 45px rgba(0,0,0,0.08)",
+          }}
+        >
           <h2
             style={{
               marginBottom: 20,
+              fontSize: 28,
             }}
           >
             {editandoId
@@ -517,12 +550,17 @@ export default function Home() {
             />
           </div>
 
+          {/* CHECKS */}
+
           <div
             style={{
-              marginTop: 20,
+              marginTop: 22,
+
               display: "flex",
-              flexDirection: "column",
-              gap: 12,
+
+              flexWrap: "wrap",
+
+              gap: 20,
             }}
           >
             <label
@@ -538,7 +576,7 @@ export default function Home() {
                 }
               />
 
-              Producto en oferta
+              🔥 Producto en oferta
             </label>
 
             <label
@@ -556,7 +594,7 @@ export default function Home() {
                 }
               />
 
-              Mostrar en Mayorista
+              📦 Mayorista
             </label>
 
             <label
@@ -574,38 +612,65 @@ export default function Home() {
                 }
               />
 
-              Mostrar en Público
+              🛒 Público
             </label>
           </div>
 
+          {/* PREVIEW */}
+
           {preview && (
-            <img
-              src={preview}
-              alt="preview"
+            <div
               style={{
-                width: "100%",
-                maxHeight: 300,
-                objectFit: "contain",
-                borderRadius: 15,
-                marginTop: 20,
+                marginTop: 25,
+
+                borderRadius: 20,
+
+                overflow: "hidden",
+
                 backgroundColor: "#fff",
               }}
-            />
+            >
+              <img
+                src={preview}
+                alt="preview"
+                style={{
+                  width: "100%",
+                  maxHeight: 320,
+                  objectFit: "contain",
+                }}
+              />
+            </div>
           )}
+
+          {/* BOTON */}
 
           <button
             onClick={agregarProducto}
             disabled={loading}
             style={{
-              marginTop: 20,
+              marginTop: 25,
+
               width: "100%",
-              padding: 16,
-              backgroundColor: "#16a34a",
+
+              padding: 18,
+
+              background:
+                "linear-gradient(135deg,#16a34a,#22c55e)",
+
               color: "white",
+
               border: "none",
-              borderRadius: 12,
+
+              borderRadius: 18,
+
               fontWeight: "bold",
-              fontSize: 16,
+
+              fontSize: 17,
+
+              cursor: "pointer",
+
+              boxShadow:
+                "0 10px 25px rgba(34,197,94,0.25)",
             }}
           >
             {loading
@@ -617,8 +682,10 @@ export default function Home() {
         </div>
       )}
 
+      {/* BUSCADOR */}
+
       <input
-        placeholder="🔍 Buscar..."
+        placeholder="🔍 Buscar productos..."
         value={busqueda}
         onChange={(e) =>
           setBusqueda(
@@ -627,69 +694,91 @@ export default function Home() {
         }
         style={{
           width: "100%",
-          padding: 16,
-          borderRadius: 14,
+
+          padding: 18,
+
+          borderRadius: 18,
+
           border: "none",
-          marginBottom: 25,
+
+          marginBottom: 30,
+
+          fontSize: 16,
+
+          outline: "none",
+
+          boxShadow:
+            "0 5px 20px rgba(0,0,0,0.06)",
         }}
       />
+
+      {/* PRODUCTOS */}
 
       <div
         style={{
           display: "grid",
 
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(260px, 1fr))",
+            "repeat(auto-fit, minmax(280px, 1fr))",
 
-          gap: 20,
+          gap: 22,
         }}
       >
         {productosFiltrados.map(
           (producto) => (
-       <div
-  key={producto.id}
-  style={{
-    background:
-      darkMode
-        ? "rgba(31,41,55,0.75)"
-        : "rgba(255,255,255,0.8)",
+            <div
+              key={producto.id}
+              style={{
+                background:
+                  darkMode
+                    ? "rgba(17,24,39,0.72)"
+                    : "rgba(255,255,255,0.8)",
 
-    backdropFilter: "blur(12px)",
+                backdropFilter:
+                  "blur(14px)",
 
-    WebkitBackdropFilter: "blur(12px)",
+                WebkitBackdropFilter:
+                  "blur(14px)",
 
-    borderRadius: 28,
+                borderRadius: 30,
 
-    overflow: "hidden",
+                overflow: "hidden",
 
-    border: darkMode
-      ? "1px solid rgba(255,255,255,0.06)"
-      : "1px solid rgba(255,255,255,0.5)",
+                border: darkMode
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "1px solid rgba(255,255,255,0.6)",
 
-    boxShadow:
-      "0 15px 40px rgba(0,0,0,0.12)",
+                boxShadow:
+                  "0 15px 45px rgba(0,0,0,0.12)",
 
-    transition: "0.25s ease",
+                transition:
+                  "0.25s ease",
 
-    cursor: "pointer",
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(-6px)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform =
-      "translateY(0px)";
-  }}
->
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform =
+                  "translateY(-8px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform =
+                  "translateY(0px)";
+              }}
+            >
+              {/* IMAGEN */}
+
               <div
                 style={{
                   width: "100%",
-                  height: 230,
+                  height: 260,
                   backgroundColor: "#fff",
+
                   display: "flex",
+
                   alignItems: "center",
+
                   justifyContent: "center",
+
                   overflow: "hidden",
                 }}
               >
@@ -703,42 +792,60 @@ export default function Home() {
                     width: "100%",
                     height: "100%",
                     objectFit: "contain",
+
+                    padding: 12,
                   }}
                 />
               </div>
 
+              {/* INFO */}
+
               <div
                 style={{
-                  padding: 18,
+                  padding: 22,
                 }}
               >
                 <h2
                   style={{
                     fontSize: 28,
+
                     marginBottom: 10,
-                    wordBreak: "break-word",
+
+                    wordBreak:
+                      "break-word",
                   }}
                 >
                   {producto.nombre}
                 </h2>
 
-                <p>
-                  Presentación:{" "}
-                  {
-                    producto.presentacion
-                  }
-                </p>
-
-                <p>
-                  Kg: {producto.kilos}
+                <p
+                  style={{
+                    opacity: 0.8,
+                    marginBottom: 6,
+                  }}
+                >
+                  📦 {producto.presentacion}
                 </p>
 
                 <p
                   style={{
-                    fontSize: 34,
+                    opacity: 0.8,
+                  }}
+                >
+                  ⚖️ {producto.kilos} Kg
+                </p>
+
+                {/* PRECIO */}
+
+                <p
+                  style={{
+                    fontSize: 38,
+
                     fontWeight: "bold",
-                    color: "#16a34a",
-                    marginTop: 15,
+
+                    color: "#22c55e",
+
+                    marginTop: 18,
                   }}
                 >
                   $
@@ -749,30 +856,42 @@ export default function Home() {
                   )}
                 </p>
 
-                {producto.oferta && (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      backgroundColor:
-                        "#dc2626",
+                {/* BADGES */}
 
-                      color: "white",
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    marginTop: 15,
+                  }}
+                >
+                  {producto.oferta && (
+                    <div
+                      style={badgeOferta}
+                    >
+                      🔥 OFERTA
+                    </div>
+                  )}
 
-                      padding:
-                        "6px 12px",
+                  {producto.mostrar_mayorista && (
+                    <div
+                      style={badgeMayorista}
+                    >
+                      📦 Mayorista
+                    </div>
+                  )}
 
-                      borderRadius: 999,
+                  {producto.mostrar_publico && (
+                    <div
+                      style={badgePublico}
+                    >
+                      🛒 Público
+                    </div>
+                  )}
+                </div>
 
-                      display:
-                        "inline-block",
-
-                      fontWeight:
-                        "bold",
-                    }}
-                  >
-                    🔥 OFERTA
-                  </div>
-                )}
+                {/* BOTONES */}
 
                 {user && (
                   <>
@@ -786,7 +905,7 @@ export default function Home() {
                         "#f59e0b"
                       )}
                     >
-                      Editar
+                      ✏️ Editar
                     </button>
 
                     <button
@@ -799,7 +918,7 @@ export default function Home() {
                         "#dc2626"
                       )}
                     >
-                      Eliminar
+                      🗑️ Eliminar
                     </button>
                   </>
                 )}
@@ -817,16 +936,24 @@ function inputStyle(
 ) {
   return {
     width: "100%",
-    padding: 14,
-    borderRadius: 12,
+
+    padding: 16,
+
+    borderRadius: 16,
+
     border: "none",
+
     backgroundColor: darkMode
-      ? "#374151"
-      : "#f3f4f6",
+      ? "#1e293b"
+      : "#f8fafc",
+
     color: darkMode
       ? "white"
-      : "black",
+      : "#111827",
+
     fontSize: 15,
+
+    outline: "none",
   };
 }
 
@@ -834,9 +961,9 @@ function botonHeader(
   darkMode: boolean
 ) {
   return {
-    backgroundColor: darkMode
-      ? "#facc15"
-      : "#111",
+    background: darkMode
+      ? "linear-gradient(135deg,#facc15,#fde047)"
+      : "linear-gradient(135deg,#111827,#1f2937)",
 
     color: darkMode
       ? "black"
@@ -844,33 +971,50 @@ function botonHeader(
 
     border: "none",
 
-    padding: "10px 16px",
+    padding: "12px 18px",
 
-    borderRadius: 10,
+    borderRadius: 14,
 
     cursor: "pointer",
 
     fontWeight: "bold",
+
+    fontSize: 15,
   };
 }
 
-function menuStyle(color: string) {
+function menuStyle(
+  color: string,
+  active: boolean
+) {
   return {
-    backgroundColor: color,
+    background: active
+      ? `linear-gradient(135deg, ${color}, ${color})`
+      : "#ffffff20",
 
     color: "white",
 
-    border: "none",
+    border: active
+      ? "none"
+      : "1px solid rgba(255,255,255,0.12)",
 
-    borderRadius: 18,
+    borderRadius: 22,
 
     padding: 22,
 
-    fontSize: 20,
+    fontSize: 19,
 
     fontWeight: "bold",
 
     cursor: "pointer",
+
+    backdropFilter: "blur(10px)",
+
+    transform: active
+      ? "scale(1.03)"
+      : "scale(1)",
+
+    transition: "0.2s",
   };
 }
 
@@ -878,27 +1022,83 @@ function botonCard(color: string) {
   return {
     width: "100%",
 
-    padding: 12,
+    padding: 14,
 
-    backgroundColor: color,
+    background: `linear-gradient(135deg, ${color}, ${color})`,
 
     color: "white",
 
     border: "none",
 
-    borderRadius: 10,
+    borderRadius: 14,
 
-    marginTop: 10,
+    marginTop: 12,
 
     cursor: "pointer",
 
     fontWeight: "bold",
+
+    fontSize: 15,
   };
 }
 
 const checkboxStyle = {
   display: "flex",
+
   alignItems: "center",
+
   gap: 10,
+
   fontWeight: "bold",
+
+  background: "rgba(255,255,255,0.08)",
+
+  padding: "10px 14px",
+
+  borderRadius: 14,
+};
+
+const badgeOferta = {
+  background:
+    "linear-gradient(135deg,#dc2626,#ef4444)",
+
+  color: "white",
+
+  padding: "7px 12px",
+
+  borderRadius: 999,
+
+  fontWeight: "bold",
+
+  fontSize: 12,
+};
+
+const badgeMayorista = {
+  background:
+    "linear-gradient(135deg,#2563eb,#3b82f6)",
+
+  color: "white",
+
+  padding: "7px 12px",
+
+  borderRadius: 999,
+
+  fontWeight: "bold",
+
+  fontSize: 12,
+};
+
+const badgePublico = {
+  background:
+    "linear-gradient(135deg,#16a34a,#22c55e)",
+
+  color: "white",
+
+  padding: "7px 12px",
+
+  borderRadius: 999,
+
+  fontWeight: "bold",
+
+  fontSize: 12,
 };
