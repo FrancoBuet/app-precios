@@ -17,6 +17,7 @@ export default function Home() {
 
   const [user, setUser] = useState<any>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [mensaje, setMensaje] = useState("");
 
   async function cerrarSesion() {
     await supabase.auth.signOut();
@@ -84,6 +85,7 @@ if (imagen) {
       }
 
       setEditandoId(null);
+      setMensaje("Producto actualizado correctamente");
     } else {
       const { error } = await supabase.from("productos").insert([
         {
@@ -100,6 +102,7 @@ if (imagen) {
         alert(error.message);
         return;
       }
+      setMensaje("Producto agregado correctamente");
     }
 
     setNombre("");
@@ -109,6 +112,7 @@ if (imagen) {
     setPrecio("");
 
     obtenerProductos();
+    setMensaje("Producto eliminado");
   }
 
   async function eliminarProducto(id: number) {
@@ -152,6 +156,21 @@ if (imagen) {
         }}
       >
         <h1>Lista de Productos</h1>
+         {mensaje && (
+  <div
+    style={{
+      backgroundColor: "#d1fae5",
+      color: "#065f46",
+      padding: 12,
+      borderRadius: 10,
+      marginBottom: 20,
+      marginTop: 10,
+      fontWeight: "bold",
+    }}
+  >
+    {mensaje}
+  </div>
+)}
 
         {user ? (
           <button
