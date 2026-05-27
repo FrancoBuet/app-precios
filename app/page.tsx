@@ -275,16 +275,21 @@ export default function Home() {
   }
 
   return (
-    <div
-      style={{
-        padding: 15,
-        backgroundColor: darkMode
-          ? "#111827"
-          : "#f3f4f6",
-        minHeight: "100vh",
-        color: darkMode ? "white" : "black",
-      }}
-    >
+   <div
+  style={{
+    padding: 15,
+
+    background: darkMode
+      ? "linear-gradient(180deg, #0f172a 0%, #111827 100%)"
+      : "linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)",
+
+    minHeight: "100vh",
+
+    color: darkMode ? "white" : "#111827",
+
+    transition: "0.3s",
+  }}
+>
       <div
         style={{
           display: "flex",
@@ -399,19 +404,30 @@ export default function Home() {
 
       {user && (
         <div
-          style={{
-            backgroundColor:
-              darkMode
-                ? "#1f2937"
-                : "white",
+  style={{
+    background:
+      darkMode
+        ? "rgba(31, 41, 55, 0.7)"
+        : "rgba(255,255,255,0.75)",
 
-            borderRadius: 20,
+    backdropFilter: "blur(14px)",
 
-            padding: 20,
+    WebkitBackdropFilter: "blur(14px)",
 
-            marginBottom: 30,
-          }}
-        >
+    borderRadius: 28,
+
+    padding: 24,
+
+    marginBottom: 30,
+
+    border: darkMode
+      ? "1px solid rgba(255,255,255,0.06)"
+      : "1px solid rgba(255,255,255,0.5)",
+
+    boxShadow:
+      "0 10px 40px rgba(0,0,0,0.08)",
+  }}
+>
           <h2
             style={{
               marginBottom: 20,
@@ -630,22 +646,42 @@ export default function Home() {
       >
         {productosFiltrados.map(
           (producto) => (
-            <div
-              key={producto.id}
-              style={{
-                backgroundColor:
-                  darkMode
-                    ? "#1f2937"
-                    : "white",
+       <div
+  key={producto.id}
+  style={{
+    background:
+      darkMode
+        ? "rgba(31,41,55,0.75)"
+        : "rgba(255,255,255,0.8)",
 
-                borderRadius: 22,
+    backdropFilter: "blur(12px)",
 
-                overflow: "hidden",
+    WebkitBackdropFilter: "blur(12px)",
 
-                boxShadow:
-                  "0 5px 20px rgba(0,0,0,0.08)",
-              }}
-            >
+    borderRadius: 28,
+
+    overflow: "hidden",
+
+    border: darkMode
+      ? "1px solid rgba(255,255,255,0.06)"
+      : "1px solid rgba(255,255,255,0.5)",
+
+    boxShadow:
+      "0 15px 40px rgba(0,0,0,0.12)",
+
+    transition: "0.25s ease",
+
+    cursor: "pointer",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(-6px)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform =
+      "translateY(0px)";
+  }}
+>
               <div
                 style={{
                   width: "100%",
