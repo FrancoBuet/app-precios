@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   const [preview, setPreview] = useState("");
   const [productos, setProductos] = useState<any[]>([]);
 
@@ -23,18 +25,28 @@ export default function Home() {
 
   const [mensaje, setMensaje] = useState("");
 
-  async function cerrarSesion() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  }
-
   useEffect(() => {
+    const temaGuardado = localStorage.getItem("darkMode");
+
+    if (temaGuardado === "true") {
+      setDarkMode(true);
+    }
+
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
     });
 
     obtenerProductos();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode.toString());
+  }, [darkMode]);
+
+  async function cerrarSesion() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   async function obtenerProductos() {
     const { data } = await supabase
@@ -59,7 +71,9 @@ export default function Home() {
       return;
     }
 
-    let imagenUrl = "";
+    setLoading(true);
+
+    let imagenUrl = preview || "";
 
     if (imagen) {
       const nombreArchivo = `${Date.now()}-${imagen.name}`;
@@ -70,6 +84,7 @@ export default function Home() {
 
       if (uploadError) {
         alert(uploadError.message);
+        setLoading(false);
         return;
       }
 
@@ -95,10 +110,12 @@ export default function Home() {
 
       if (error) {
         alert(error.message);
+        setLoading(false);
         return;
       }
 
       mostrarMensaje("Producto actualizado correctamente");
+
       setEditandoId(null);
     } else {
       const { error } = await supabase.from("productos").insert([
@@ -114,6 +131,7 @@ export default function Home() {
 
       if (error) {
         alert(error.message);
+        setLoading(false);
         return;
       }
 
@@ -129,6 +147,8 @@ export default function Home() {
     setPreview("");
 
     obtenerProductos();
+
+    setLoading(false);
   }
 
   async function eliminarProducto(id: number) {
@@ -173,8 +193,6 @@ export default function Home() {
         transition: "0.3s",
       }}
     >
-      {/* HEADER */}
-
       <div
         style={{
           display: "flex",
@@ -226,7 +244,7 @@ export default function Home() {
             {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
           </button>
 
-          {user ? (
+          {user && (
             <button
               onClick={cerrarSesion}
               style={{
@@ -241,26 +259,9 @@ export default function Home() {
             >
               Cerrar sesión
             </button>
-          ) : (
-            <button
-              onClick={() => (window.location.href = "/login")}
-              style={{
-                backgroundColor: "#16a34a",
-                color: "white",
-                border: "none",
-                padding: "10px 16px",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              Iniciar sesión
-            </button>
           )}
         </div>
       </div>
-
-      {/* MENSAJES */}
 
       {mensaje && (
         <div
@@ -276,8 +277,6 @@ export default function Home() {
           {mensaje}
         </div>
       )}
-
-      {/* FORMULARIO */}
 
       {user && (
         <div
@@ -330,6 +329,7 @@ export default function Home() {
             />
 
             <input
+              type="number"
               placeholder="Kilos"
               value={kilos}
               onChange={(e) => setKilos(e.target.value)}
@@ -337,6 +337,7 @@ export default function Home() {
             />
 
             <input
+              type="number"
               placeholder="Precio"
               value={precio}
               onChange={(e) => setPrecio(e.target.value)}
@@ -377,11 +378,14 @@ export default function Home() {
 
           <button
             onClick={agregarProducto}
+            disabled={loading}
             style={{
               marginTop: 20,
               width: "100%",
               padding: 16,
-              backgroundColor: "#16a34a",
+              backgroundColor: loading
+                ? "#4b5563"
+                : "#16a34a",
               color: "white",
               border: "none",
               borderRadius: 12,
@@ -390,7 +394,9 @@ export default function Home() {
               fontSize: 16,
             }}
           >
-            {editandoId
+            {loading
+              ? "Guardando..."
+              : editandoId
               ? "Guardar Cambios"
               : "Agregar Producto"}
           </button>
@@ -428,8 +434,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* BUSCADOR */}
-
       <input
         placeholder="🔍 Buscar producto..."
         value={busqueda}
@@ -443,8 +447,6 @@ export default function Home() {
           fontSize: 16,
         }}
       />
-
-      {/* CARDS */}
 
       <div
         style={{
@@ -466,42 +468,64 @@ export default function Home() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform =
-                "translateY(-6px)";
+                "translateY(-8px)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform =
                 "translateY(0px)";
             }}
           >
-            {producto.imagen && (
-              <img
-                src={producto.imagen}
-                alt={producto.nombre}
-                style={{
-                  width: "100%",
-                  height: 240,
-                  objectFit: "cover",
-                }}
-              />
-            )}
+            <img
+              src={
+                producto.imagen ||
+                "https://via.placeholder.com/400x300?text=Sin+Imagen"
+              }
+              alt={producto.nombre}
+              style={{
+                width: "100%",
+                height: 240,
+                objectFit: "cover",
+              }}
+            />
 
             <div
               style={{
                 padding: 20,
               }}
             >
-              <h2
+              <div
                 style={{
-                  fontSize: 30,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   marginBottom: 10,
                 }}
               >
-                {producto.nombre}
-              </h2>
+                <h2
+                  style={{
+                    fontSize: 30,
+                  }}
+                >
+                  {producto.nombre}
+                </h2>
 
-              <p style={{ opacity: 0.8 }}>
-                Tipo: {producto.tipo}
-              </p>
+                <span
+                  style={{
+                    backgroundColor:
+                      producto.tipo?.toLowerCase() ===
+                      "mayorista"
+                        ? "#2563eb"
+                        : "#16a34a",
+                    color: "white",
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {producto.tipo}
+                </span>
+              </div>
 
               <p style={{ opacity: 0.8 }}>
                 Presentación: {producto.presentacion}
@@ -519,7 +543,10 @@ export default function Home() {
                   marginTop: 15,
                 }}
               >
-                ${producto.precio}
+                $
+                {Number(producto.precio).toLocaleString(
+                  "es-AR"
+                )}
               </p>
 
               {user && (
