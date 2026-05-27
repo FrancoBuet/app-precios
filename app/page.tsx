@@ -300,7 +300,7 @@ export default function Home() {
     <div>
       <h1
         style={{
-          fontSize: window.innerWidth < 600 ? 34 : 42,
+          fontSize: "clamp(28px, 6vw, 42px)",
           fontWeight: "900",
           marginBottom: 2,
           lineHeight: 1,
