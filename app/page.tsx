@@ -15,18 +15,31 @@ export default function Home() {
   const [tipo, setTipo] = useState("");
   const [presentacion, setPresentacion] = useState("");
   const [kilos, setKilos] = useState("");
-  const [precio, setPrecio] = useState("");
+
+  const [precioMayorista, setPrecioMayorista] =
+    useState("");
+
+  const [precioPublico, setPrecioPublico] =
+    useState("");
+
+  const [oferta, setOferta] = useState(false);
+
   const [imagen, setImagen] = useState<File | null>(null);
 
   const [busqueda, setBusqueda] = useState("");
 
+  const [seccion, setSeccion] = useState("inicio");
+
   const [user, setUser] = useState<any>(null);
-  const [editandoId, setEditandoId] = useState<number | null>(null);
+
+  const [editandoId, setEditandoId] =
+    useState<number | null>(null);
 
   const [mensaje, setMensaje] = useState("");
 
   useEffect(() => {
-    const temaGuardado = localStorage.getItem("darkMode");
+    const temaGuardado =
+      localStorage.getItem("darkMode");
 
     if (temaGuardado === "true") {
       setDarkMode(true);
@@ -40,7 +53,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("darkMode", darkMode.toString());
+    localStorage.setItem(
+      "darkMode",
+      darkMode.toString()
+    );
   }, [darkMode]);
 
   async function cerrarSesion() {
@@ -66,8 +82,12 @@ export default function Home() {
   }
 
   async function agregarProducto() {
-    if (!nombre || !precio) {
-      alert("Completa nombre y precio");
+    if (
+      !nombre ||
+      !precioMayorista ||
+      !precioPublico
+    ) {
+      alert("Completa todos los precios");
       return;
     }
 
@@ -78,9 +98,10 @@ export default function Home() {
     if (imagen) {
       const nombreArchivo = `${Date.now()}-${imagen.name}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("productos")
-        .upload(nombreArchivo, imagen);
+      const { error: uploadError } =
+        await supabase.storage
+          .from("productos")
+          .upload(nombreArchivo, imagen);
 
       if (uploadError) {
         alert(uploadError.message);
@@ -103,7 +124,17 @@ export default function Home() {
           tipo,
           presentacion,
           kilos: Number(kilos),
-          precio: Number(precio),
+
+          precio_mayorista: Number(
+            precioMayorista
+          ),
+
+          precio_publico: Number(
+            precioPublico
+          ),
+
+          oferta,
+
           imagen: imagenUrl,
         })
         .eq("id", editandoId);
@@ -114,20 +145,34 @@ export default function Home() {
         return;
       }
 
-      mostrarMensaje("Producto actualizado correctamente");
+      mostrarMensaje(
+        "Producto actualizado correctamente"
+      );
 
       setEditandoId(null);
     } else {
-      const { error } = await supabase.from("productos").insert([
-        {
-          nombre,
-          tipo,
-          presentacion,
-          kilos: Number(kilos),
-          precio: Number(precio),
-          imagen: imagenUrl,
-        },
-      ]);
+      const { error } = await supabase
+        .from("productos")
+        .insert([
+          {
+            nombre,
+            tipo,
+            presentacion,
+            kilos: Number(kilos),
+
+            precio_mayorista: Number(
+              precioMayorista
+            ),
+
+            precio_publico: Number(
+              precioPublico
+            ),
+
+            oferta,
+
+            imagen: imagenUrl,
+          },
+        ]);
 
       if (error) {
         alert(error.message);
@@ -135,15 +180,23 @@ export default function Home() {
         return;
       }
 
-      mostrarMensaje("Producto agregado correctamente");
+      mostrarMensaje(
+        "Producto agregado correctamente"
+      );
     }
 
     setNombre("");
     setTipo("");
     setPresentacion("");
     setKilos("");
-    setPrecio("");
+
+    setPrecioMayorista("");
+    setPrecioPublico("");
+
+    setOferta(false);
+
     setImagen(null);
+
     setPreview("");
 
     obtenerProductos();
@@ -158,7 +211,10 @@ export default function Home() {
 
     if (!confirmar) return;
 
-    await supabase.from("productos").delete().eq("id", id);
+    await supabase
+      .from("productos")
+      .delete()
+      .eq("id", id);
 
     obtenerProductos();
 
@@ -169,38 +225,66 @@ export default function Home() {
     setEditandoId(producto.id);
 
     setNombre(producto.nombre || "");
+
     setTipo(producto.tipo || "");
-    setPresentacion(producto.presentacion || "");
-    setKilos(producto.kilos?.toString() || "");
-    setPrecio(producto.precio?.toString() || "");
+
+    setPresentacion(
+      producto.presentacion || ""
+    );
+
+    setKilos(
+      producto.kilos?.toString() || ""
+    );
+
+    setPrecioMayorista(
+      producto.precio_mayorista?.toString() ||
+        ""
+    );
+
+    setPrecioPublico(
+      producto.precio_publico?.toString() ||
+        ""
+    );
+
+    setOferta(producto.oferta || false);
 
     if (producto.imagen) {
       setPreview(producto.imagen);
     }
   }
 
-  const productosFiltrados = productos.filter((producto) =>
-    producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  let productosFiltrados = productos.filter(
+    (producto) =>
+      producto.nombre
+        .toLowerCase()
+        .includes(busqueda.toLowerCase())
   );
+
+  if (seccion === "ofertas") {
+    productosFiltrados =
+      productosFiltrados.filter(
+        (p) => p.oferta
+      );
+  }
 
   return (
     <div
       style={{
         padding: 20,
-        backgroundColor: darkMode ? "#111827" : "#f3f4f6",
+        backgroundColor: darkMode
+          ? "#111827"
+          : "#f3f4f6",
         minHeight: "100vh",
         color: darkMode ? "white" : "black",
-        transition: "0.3s",
       }}
     >
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "center",
           marginBottom: 30,
-          flexWrap: "wrap",
-          gap: 10,
         }}
       >
         <div>
@@ -208,10 +292,9 @@ export default function Home() {
             style={{
               fontSize: 38,
               fontWeight: "bold",
-              marginBottom: 5,
             }}
           >
-            Lista de Productos
+            Mi Catálogo
           </h1>
 
           <p
@@ -219,7 +302,7 @@ export default function Home() {
               opacity: 0.7,
             }}
           >
-            Panel administrador de productos
+            Mayorista & Público
           </p>
         </div>
 
@@ -230,34 +313,31 @@ export default function Home() {
           }}
         >
           <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{
-              backgroundColor: darkMode ? "#facc15" : "#111",
-              color: darkMode ? "black" : "white",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: 10,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
+            onClick={() =>
+              setDarkMode(!darkMode)
+            }
+            style={botonHeader(
+              darkMode
+            )}
           >
-            {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
+            {darkMode
+              ? "☀️"
+              : "🌙"}
           </button>
 
           {user && (
             <button
               onClick={cerrarSesion}
               style={{
-                backgroundColor: "#dc2626",
+                ...botonHeader(
+                  darkMode
+                ),
+                backgroundColor:
+                  "#dc2626",
                 color: "white",
-                border: "none",
-                padding: "10px 16px",
-                borderRadius: 10,
-                cursor: "pointer",
-                fontWeight: "bold",
               }}
             >
-              Cerrar sesión
+              Salir
             </button>
           )}
         </div>
@@ -266,7 +346,8 @@ export default function Home() {
       {mensaje && (
         <div
           style={{
-            backgroundColor: "#d1fae5",
+            backgroundColor:
+              "#d1fae5",
             color: "#065f46",
             padding: 14,
             borderRadius: 12,
@@ -278,20 +359,66 @@ export default function Home() {
         </div>
       )}
 
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 15,
+          marginBottom: 30,
+        }}
+      >
+        <button
+          onClick={() =>
+            setSeccion("ofertas")
+          }
+          style={menuStyle(
+            "#dc2626"
+          )}
+        >
+          🔥 Ofertas
+        </button>
+
+        <button
+          onClick={() =>
+            setSeccion(
+              "mayorista"
+            )
+          }
+          style={menuStyle(
+            "#2563eb"
+          )}
+        >
+          📦 Mayorista
+        </button>
+
+        <button
+          onClick={() =>
+            setSeccion("publico")
+          }
+          style={menuStyle(
+            "#16a34a"
+          )}
+        >
+          🛒 Público
+        </button>
+      </div>
+
       {user && (
         <div
           style={{
-            backgroundColor: darkMode ? "#1f2937" : "white",
+            backgroundColor:
+              darkMode
+                ? "#1f2937"
+                : "white",
             borderRadius: 20,
             padding: 25,
             marginBottom: 30,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         >
           <h2
             style={{
               marginBottom: 20,
-              fontSize: 28,
             }}
           >
             {editandoId
@@ -310,57 +437,136 @@ export default function Home() {
             <input
               placeholder="Nombre"
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              style={inputStyle(darkMode)}
+              onChange={(e) =>
+                setNombre(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
             />
 
             <input
               placeholder="Tipo"
               value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              style={inputStyle(darkMode)}
+              onChange={(e) =>
+                setTipo(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
             />
 
             <input
               placeholder="Presentación"
               value={presentacion}
-              onChange={(e) => setPresentacion(e.target.value)}
-              style={inputStyle(darkMode)}
+              onChange={(e) =>
+                setPresentacion(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
             />
 
             <input
-              type="number"
               placeholder="Kilos"
               value={kilos}
-              onChange={(e) => setKilos(e.target.value)}
-              style={inputStyle(darkMode)}
+              onChange={(e) =>
+                setKilos(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
             />
 
             <input
-              type="number"
-              placeholder="Precio"
-              value={precio}
-              onChange={(e) => setPrecio(e.target.value)}
-              style={inputStyle(darkMode)}
+              placeholder="Precio Mayorista"
+              value={
+                precioMayorista
+              }
+              onChange={(e) =>
+                setPrecioMayorista(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
+            />
+
+            <input
+              placeholder="Precio Público"
+              value={
+                precioPublico
+              }
+              onChange={(e) =>
+                setPrecioPublico(
+                  e.target.value
+                )
+              }
+              style={inputStyle(
+                darkMode
+              )}
             />
 
             <input
               type="file"
               accept="image/*"
               onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setImagen(e.target.files[0]);
-
-                  const imageUrl = URL.createObjectURL(
+                if (
+                  e.target.files &&
+                  e.target.files[0]
+                ) {
+                  setImagen(
                     e.target.files[0]
                   );
 
-                  setPreview(imageUrl);
+                  const imageUrl =
+                    URL.createObjectURL(
+                      e.target
+                        .files[0]
+                    );
+
+                  setPreview(
+                    imageUrl
+                  );
                 }
               }}
-              style={inputStyle(darkMode)}
+              style={inputStyle(
+                darkMode
+              )}
             />
           </div>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems:
+                "center",
+              gap: 10,
+              marginTop: 20,
+              fontWeight: "bold",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={oferta}
+              onChange={(e) =>
+                setOferta(
+                  e.target.checked
+                )
+              }
+            />
+
+            Producto en oferta
+          </label>
 
           {preview && (
             <img
@@ -377,21 +583,20 @@ export default function Home() {
           )}
 
           <button
-            onClick={agregarProducto}
+            onClick={
+              agregarProducto
+            }
             disabled={loading}
             style={{
               marginTop: 20,
               width: "100%",
               padding: 16,
-              backgroundColor: loading
-                ? "#4b5563"
-                : "#16a34a",
+              backgroundColor:
+                "#16a34a",
               color: "white",
               border: "none",
               borderRadius: 12,
-              cursor: "pointer",
               fontWeight: "bold",
-              fontSize: 16,
             }}
           >
             {loading
@@ -400,51 +605,23 @@ export default function Home() {
               ? "Guardar Cambios"
               : "Agregar Producto"}
           </button>
-
-          {editandoId && (
-            <button
-              onClick={() => {
-                setEditandoId(null);
-
-                setNombre("");
-                setTipo("");
-                setPresentacion("");
-                setKilos("");
-                setPrecio("");
-
-                setImagen(null);
-                setPreview("");
-              }}
-              style={{
-                marginTop: 10,
-                width: "100%",
-                padding: 16,
-                backgroundColor: "#6b7280",
-                color: "white",
-                border: "none",
-                borderRadius: 12,
-                cursor: "pointer",
-                fontWeight: "bold",
-                fontSize: 16,
-              }}
-            >
-              Cancelar edición
-            </button>
-          )}
         </div>
       )}
 
       <input
-        placeholder="🔍 Buscar producto..."
+        placeholder="🔍 Buscar..."
         value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
+        onChange={(e) =>
+          setBusqueda(
+            e.target.value
+          )
+        }
         style={{
           width: "100%",
           padding: 16,
-          marginBottom: 30,
           borderRadius: 14,
           border: "none",
-          fontSize: 16,
+          marginBottom: 30,
         }}
       />
 
@@ -456,156 +633,225 @@ export default function Home() {
           gap: 25,
         }}
       >
-        {productosFiltrados.map((producto) => (
-          <div
-            key={producto.id}
-            style={{
-              backgroundColor: darkMode ? "#1f2937" : "white",
-              borderRadius: 22,
-              overflow: "hidden",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-              transition: "0.25s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform =
-                "translateY(-8px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform =
-                "translateY(0px)";
-            }}
-          >
-            <img
-              src={
-                producto.imagen ||
-                "https://via.placeholder.com/400x300?text=Sin+Imagen"
-              }
-              alt={producto.nombre}
-              style={{
-                width: "100%",
-                height: 240,
-                objectFit: "cover",
-              }}
-            />
-
+        {productosFiltrados.map(
+          (producto) => (
             <div
+              key={producto.id}
               style={{
-                padding: 20,
+                backgroundColor:
+                  darkMode
+                    ? "#1f2937"
+                    : "white",
+                borderRadius: 22,
+                overflow:
+                  "hidden",
               }}
             >
+              <img
+                src={
+                  producto.imagen ||
+                  "https://via.placeholder.com/400x300?text=Producto"
+                }
+                alt={
+                  producto.nombre
+                }
+                style={{
+                  width: "100%",
+                  height: 240,
+                  objectFit:
+                    "cover",
+                }}
+              />
+
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 10,
+                  padding: 20,
                 }}
               >
                 <h2
                   style={{
                     fontSize: 30,
+                    marginBottom: 10,
                   }}
                 >
-                  {producto.nombre}
+                  {
+                    producto.nombre
+                  }
                 </h2>
 
-                <span
-                  style={{
-                    backgroundColor:
-                      producto.tipo?.toLowerCase() ===
-                      "mayorista"
-                        ? "#2563eb"
-                        : "#16a34a",
-                    color: "white",
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    fontSize: 12,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {producto.tipo}
-                </span>
-              </div>
+                <p>
+                  Presentación:{" "}
+                  {
+                    producto.presentacion
+                  }
+                </p>
 
-              <p style={{ opacity: 0.8 }}>
-                Presentación: {producto.presentacion}
-              </p>
+                <p>
+                  Kg:{" "}
+                  {
+                    producto.kilos
+                  }
+                </p>
 
-              <p style={{ opacity: 0.8 }}>
-                Kg: {producto.kilos}
-              </p>
-
-              <p
-                style={{
-                  fontSize: 34,
-                  fontWeight: "bold",
-                  color: "#16a34a",
-                  marginTop: 15,
-                }}
-              >
-                $
-                {Number(producto.precio).toLocaleString(
-                  "es-AR"
+                {seccion ===
+                "mayorista" ? (
+                  <p
+                    style={{
+                      fontSize: 34,
+                      fontWeight:
+                        "bold",
+                      color:
+                        "#2563eb",
+                    }}
+                  >
+                    $
+                    {Number(
+                      producto.precio_mayorista
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      fontSize: 34,
+                      fontWeight:
+                        "bold",
+                      color:
+                        "#16a34a",
+                    }}
+                  >
+                    $
+                    {Number(
+                      producto.precio_publico
+                    ).toLocaleString(
+                      "es-AR"
+                    )}
+                  </p>
                 )}
-              </p>
 
-              {user && (
-                <>
-                  <button
-                    onClick={() =>
-                      editarProducto(producto)
-                    }
+                {producto.oferta && (
+                  <div
                     style={{
-                      width: "100%",
-                      padding: 12,
-                      backgroundColor: "#f59e0b",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 10,
-                      marginTop: 15,
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      eliminarProducto(producto.id)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: 12,
-                      backgroundColor: "#dc2626",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 10,
                       marginTop: 10,
-                      cursor: "pointer",
-                      fontWeight: "bold",
+                      backgroundColor:
+                        "#dc2626",
+                      color:
+                        "white",
+                      padding:
+                        "6px 12px",
+                      borderRadius: 999,
+                      display:
+                        "inline-block",
+                      fontWeight:
+                        "bold",
                     }}
                   >
-                    Eliminar
-                  </button>
-                </>
-              )}
+                    OFERTA
+                  </div>
+                )}
+
+                {user && (
+                  <>
+                    <button
+                      onClick={() =>
+                        editarProducto(
+                          producto
+                        )
+                      }
+                      style={
+                        botonCard(
+                          "#f59e0b"
+                        )
+                      }
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        eliminarProducto(
+                          producto.id
+                        )
+                      }
+                      style={
+                        botonCard(
+                          "#dc2626"
+                        )
+                      }
+                    >
+                      Eliminar
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   );
 }
 
-function inputStyle(darkMode: boolean) {
+function inputStyle(
+  darkMode: boolean
+) {
   return {
     width: "100%",
     padding: 14,
     borderRadius: 12,
     border: "none",
-    backgroundColor: darkMode ? "#374151" : "#f3f4f6",
-    color: darkMode ? "white" : "black",
+    backgroundColor: darkMode
+      ? "#374151"
+      : "#f3f4f6",
+    color: darkMode
+      ? "white"
+      : "black",
     fontSize: 15,
+  };
+}
+
+function botonHeader(
+  darkMode: boolean
+) {
+  return {
+    backgroundColor: darkMode
+      ? "#facc15"
+      : "#111",
+    color: darkMode
+      ? "black"
+      : "white",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontWeight: "bold",
+  };
+}
+
+function menuStyle(color: string) {
+  return {
+    backgroundColor: color,
+    color: "white",
+    border: "none",
+    borderRadius: 18,
+    padding: 25,
+    fontSize: 22,
+    fontWeight: "bold",
+    cursor: "pointer",
+  };
+}
+
+function botonCard(color: string) {
+  return {
+    width: "100%",
+    padding: 12,
+    backgroundColor: color,
+    color: "white",
+    border: "none",
+    borderRadius: 10,
+    marginTop: 10,
+    cursor: "pointer",
+    fontWeight: "bold",
   };
 }
