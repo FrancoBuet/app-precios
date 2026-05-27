@@ -112,7 +112,6 @@ if (imagen) {
     setPrecio("");
 
     obtenerProductos();
-    setMensaje("Producto eliminado");
   }
 
   async function eliminarProducto(id: number) {
@@ -123,6 +122,12 @@ if (imagen) {
   await supabase.from("productos").delete().eq("id", id);
 
   obtenerProductos();
+
+  setMensaje("Producto eliminado");
+
+  setTimeout(() => {
+    setMensaje("");
+  }, 3000);
 }
 
   function editarProducto(producto: any) {
