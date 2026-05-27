@@ -290,12 +290,26 @@ export default function Home() {
         .includes(busqueda.toLowerCase())
   );
 
-  if (seccion === "ofertas") {
-    productosFiltrados =
-      productosFiltrados.filter(
-        (p) => p.oferta
-      );
-  }
+ if (seccion === "ofertas") {
+  productosFiltrados =
+    productosFiltrados.filter(
+      (p) => p.oferta
+    );
+}
+
+if (seccion === "mayorista") {
+  productosFiltrados =
+    productosFiltrados.filter(
+      (p) => p.mostrar_mayorista === true
+    );
+}
+
+if (seccion === "publico") {
+  productosFiltrados =
+    productosFiltrados.filter(
+      (p) => p.mostrar_publico === true
+    );
+}
 
   if (seccion === "mayorista") {
     productosFiltrados =
