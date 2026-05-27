@@ -112,10 +112,14 @@ if (imagen) {
   }
 
   async function eliminarProducto(id: number) {
-    await supabase.from("productos").delete().eq("id", id);
+  const confirmar = confirm("¿Seguro que querés eliminar este producto?");
 
-    obtenerProductos();
-  }
+  if (!confirmar) return;
+
+  await supabase.from("productos").delete().eq("id", id);
+
+  obtenerProductos();
+}
 
   function editarProducto(producto: any) {
     setEditandoId(producto.id);
