@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Home() {
+  const [darkMode, setDarkMode] = useState(false);
+
   const [preview, setPreview] = useState("");
   const [productos, setProductos] = useState<any[]>([]);
 
@@ -18,6 +20,7 @@ export default function Home() {
 
   const [user, setUser] = useState<any>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+
   const [mensaje, setMensaje] = useState("");
 
   async function cerrarSesion() {
@@ -40,6 +43,14 @@ export default function Home() {
       .order("id", { ascending: false });
 
     setProductos(data || []);
+  }
+
+  function mostrarMensaje(texto: string) {
+    setMensaje(texto);
+
+    setTimeout(() => {
+      setMensaje("");
+    }, 3000);
   }
 
   async function agregarProducto() {
@@ -87,13 +98,8 @@ export default function Home() {
         return;
       }
 
+      mostrarMensaje("Producto actualizado correctamente");
       setEditandoId(null);
-
-      setMensaje("Producto actualizado correctamente");
-
-      setTimeout(() => {
-        setMensaje("");
-      }, 3000);
     } else {
       const { error } = await supabase.from("productos").insert([
         {
@@ -111,11 +117,7 @@ export default function Home() {
         return;
       }
 
-      setMensaje("Producto agregado correctamente");
-
-      setTimeout(() => {
-        setMensaje("");
-      }, 3000);
+      mostrarMensaje("Producto agregado correctamente");
     }
 
     setNombre("");
@@ -140,11 +142,7 @@ export default function Home() {
 
     obtenerProductos();
 
-    setMensaje("Producto eliminado");
-
-    setTimeout(() => {
-      setMensaje("");
-    }, 3000);
+    mostrarMensaje("Producto eliminado");
   }
 
   function editarProducto(producto: any) {
@@ -155,6 +153,10 @@ export default function Home() {
     setPresentacion(producto.presentacion || "");
     setKilos(producto.kilos?.toString() || "");
     setPrecio(producto.precio?.toString() || "");
+
+    if (producto.imagen) {
+      setPreview(producto.imagen);
+    }
   }
 
   const productosFiltrados = productos.filter((producto) =>
@@ -165,58 +167,108 @@ export default function Home() {
     <div
       style={{
         padding: 20,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: darkMode ? "#111827" : "#f3f4f6",
         minHeight: "100vh",
+        color: darkMode ? "white" : "black",
+        transition: "0.3s",
       }}
     >
+      {/* HEADER */}
+
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 30,
+          flexWrap: "wrap",
+          gap: 10,
         }}
       >
-        <h1>Lista de Productos</h1>
+        <div>
+          <h1
+            style={{
+              fontSize: 38,
+              fontWeight: "bold",
+              marginBottom: 5,
+            }}
+          >
+            Lista de Productos
+          </h1>
 
-        {user ? (
-          <button
-            onClick={cerrarSesion}
+          <p
             style={{
-              backgroundColor: "#111",
-              color: "white",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: 8,
-              cursor: "pointer",
+              opacity: 0.7,
             }}
           >
-            Cerrar sesión
-          </button>
-        ) : (
+            Panel administrador de productos
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+          }}
+        >
           <button
-            onClick={() => (window.location.href = "/login")}
+            onClick={() => setDarkMode(!darkMode)}
             style={{
-              backgroundColor: "green",
-              color: "white",
+              backgroundColor: darkMode ? "#facc15" : "#111",
+              color: darkMode ? "black" : "white",
               border: "none",
               padding: "10px 16px",
-              borderRadius: 8,
+              borderRadius: 10,
               cursor: "pointer",
+              fontWeight: "bold",
             }}
           >
-            Iniciar sesión
+            {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
           </button>
-        )}
+
+          {user ? (
+            <button
+              onClick={cerrarSesion}
+              style={{
+                backgroundColor: "#dc2626",
+                color: "white",
+                border: "none",
+                padding: "10px 16px",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <button
+              onClick={() => (window.location.href = "/login")}
+              style={{
+                backgroundColor: "#16a34a",
+                color: "white",
+                border: "none",
+                padding: "10px 16px",
+                borderRadius: 10,
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              Iniciar sesión
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* MENSAJES */}
 
       {mensaje && (
         <div
           style={{
             backgroundColor: "#d1fae5",
             color: "#065f46",
-            padding: 12,
-            borderRadius: 10,
+            padding: 14,
+            borderRadius: 12,
             marginBottom: 20,
             fontWeight: "bold",
           }}
@@ -225,94 +277,89 @@ export default function Home() {
         </div>
       )}
 
+      {/* FORMULARIO */}
+
       {user && (
         <div
           style={{
-            border: "1px solid #ccc",
-            padding: 20,
-            borderRadius: 10,
+            backgroundColor: darkMode ? "#1f2937" : "white",
+            borderRadius: 20,
+            padding: 25,
             marginBottom: 30,
-            backgroundColor: "white",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         >
-          <h2>
-            {editandoId ? "Editar Producto" : "Agregar Producto"}
+          <h2
+            style={{
+              marginBottom: 20,
+              fontSize: 28,
+            }}
+          >
+            {editandoId
+              ? "✏️ Editar Producto"
+              : "➕ Agregar Producto"}
           </h2>
 
-          <input
-            placeholder="Nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+          <div
             style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: 15,
             }}
-          />
+          >
+            <input
+              placeholder="Nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              style={inputStyle(darkMode)}
+            />
 
-          <input
-            placeholder="Tipo"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
-            }}
-          />
+            <input
+              placeholder="Tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              style={inputStyle(darkMode)}
+            />
 
-          <input
-            placeholder="Presentación"
-            value={presentacion}
-            onChange={(e) => setPresentacion(e.target.value)}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
-            }}
-          />
+            <input
+              placeholder="Presentación"
+              value={presentacion}
+              onChange={(e) => setPresentacion(e.target.value)}
+              style={inputStyle(darkMode)}
+            />
 
-          <input
-            placeholder="Kilos"
-            value={kilos}
-            onChange={(e) => setKilos(e.target.value)}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
-            }}
-          />
+            <input
+              placeholder="Kilos"
+              value={kilos}
+              onChange={(e) => setKilos(e.target.value)}
+              style={inputStyle(darkMode)}
+            />
 
-          <input
-            placeholder="Precio"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-              padding: 10,
-            }}
-          />
+            <input
+              placeholder="Precio"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              style={inputStyle(darkMode)}
+            />
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                setImagen(e.target.files[0]);
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setImagen(e.target.files[0]);
 
-                const imageUrl = URL.createObjectURL(
-                  e.target.files[0]
-                );
+                  const imageUrl = URL.createObjectURL(
+                    e.target.files[0]
+                  );
 
-                setPreview(imageUrl);
-              }
-            }}
-            style={{
-              width: "100%",
-              marginBottom: 10,
-            }}
-          />
+                  setPreview(imageUrl);
+                }
+              }}
+              style={inputStyle(darkMode)}
+            />
+          </div>
 
           {preview && (
             <img
@@ -320,10 +367,10 @@ export default function Home() {
               alt="preview"
               style={{
                 width: "100%",
-                height: 200,
+                maxHeight: 300,
                 objectFit: "cover",
-                borderRadius: 10,
-                marginBottom: 10,
+                borderRadius: 15,
+                marginTop: 20,
               }}
             />
           )}
@@ -331,13 +378,16 @@ export default function Home() {
           <button
             onClick={agregarProducto}
             style={{
-              padding: 12,
+              marginTop: 20,
               width: "100%",
+              padding: 16,
               backgroundColor: "#16a34a",
               color: "white",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 12,
               cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: 16,
             }}
           >
             {editandoId
@@ -349,23 +399,27 @@ export default function Home() {
             <button
               onClick={() => {
                 setEditandoId(null);
+
                 setNombre("");
                 setTipo("");
                 setPresentacion("");
                 setKilos("");
                 setPrecio("");
+
                 setImagen(null);
                 setPreview("");
               }}
               style={{
                 marginTop: 10,
-                padding: 12,
                 width: "100%",
-                backgroundColor: "#666",
+                padding: 16,
+                backgroundColor: "#6b7280",
                 color: "white",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 12,
                 cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: 16,
               }}
             >
               Cancelar edición
@@ -374,41 +428,45 @@ export default function Home() {
         </div>
       )}
 
+      {/* BUSCADOR */}
+
       <input
-        placeholder="Buscar producto..."
+        placeholder="🔍 Buscar producto..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         style={{
           width: "100%",
-          padding: 12,
+          padding: 16,
           marginBottom: 30,
-          borderRadius: 10,
-          border: "1px solid #ccc",
+          borderRadius: 14,
+          border: "none",
+          fontSize: 16,
         }}
       />
+
+      {/* CARDS */}
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: 20,
+            "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: 25,
         }}
       >
         {productosFiltrados.map((producto) => (
           <div
             key={producto.id}
             style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 20,
-              padding: 20,
-              boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-              transition: "0.2s",
-              backgroundColor: "white",
+              backgroundColor: darkMode ? "#1f2937" : "white",
+              borderRadius: 22,
+              overflow: "hidden",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+              transition: "0.25s",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform =
-                "translateY(-5px)";
+                "translateY(-6px)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform =
@@ -421,103 +479,106 @@ export default function Home() {
                 alt={producto.nombre}
                 style={{
                   width: "100%",
-                  height: 200,
+                  height: 240,
                   objectFit: "cover",
-                  borderRadius: 10,
-                  marginBottom: 10,
                 }}
               />
             )}
 
-            <h2
+            <div
               style={{
-                fontSize: 28,
-                fontWeight: "bold",
-                marginBottom: 10,
+                padding: 20,
               }}
             >
-              {producto.nombre}
-            </h2>
+              <h2
+                style={{
+                  fontSize: 30,
+                  marginBottom: 10,
+                }}
+              >
+                {producto.nombre}
+              </h2>
 
-            <p
-              style={{
-                marginBottom: 8,
-                color: "#444",
-              }}
-            >
-              Tipo: {producto.tipo}
-            </p>
+              <p style={{ opacity: 0.8 }}>
+                Tipo: {producto.tipo}
+              </p>
 
-            <p
-              style={{
-                marginBottom: 8,
-                color: "#444",
-              }}
-            >
-              Presentación: {producto.presentacion}
-            </p>
+              <p style={{ opacity: 0.8 }}>
+                Presentación: {producto.presentacion}
+              </p>
 
-            <p
-              style={{
-                marginBottom: 8,
-                color: "#444",
-              }}
-            >
-              Kg: {producto.kilos}
-            </p>
+              <p style={{ opacity: 0.8 }}>
+                Kg: {producto.kilos}
+              </p>
 
-            <p
-              style={{
-                color: "green",
-                fontWeight: "bold",
-                fontSize: 28,
-              }}
-            >
-              ${producto.precio}
-            </p>
+              <p
+                style={{
+                  fontSize: 34,
+                  fontWeight: "bold",
+                  color: "#16a34a",
+                  marginTop: 15,
+                }}
+              >
+                ${producto.precio}
+              </p>
 
-            {user && (
-              <>
-                <button
-                  onClick={() =>
-                    eliminarProducto(producto.id)
-                  }
-                  style={{
-                    marginTop: 10,
-                    backgroundColor: "#dc2626",
-                    color: "white",
-                    border: "none",
-                    padding: 10,
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    width: "100%",
-                  }}
-                >
-                  Eliminar
-                </button>
+              {user && (
+                <>
+                  <button
+                    onClick={() =>
+                      editarProducto(producto)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      backgroundColor: "#f59e0b",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 10,
+                      marginTop: 15,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Editar
+                  </button>
 
-                <button
-                  onClick={() =>
-                    editarProducto(producto)
-                  }
-                  style={{
-                    marginTop: 10,
-                    backgroundColor: "#f59e0b",
-                    color: "white",
-                    border: "none",
-                    padding: 10,
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    width: "100%",
-                  }}
-                >
-                  Editar
-                </button>
-              </>
-            )}
+                  <button
+                    onClick={() =>
+                      eliminarProducto(producto.id)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      backgroundColor: "#dc2626",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 10,
+                      marginTop: 10,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+function inputStyle(darkMode: boolean) {
+  return {
+    width: "100%",
+    padding: 14,
+    borderRadius: 12,
+    border: "none",
+    backgroundColor: darkMode ? "#374151" : "#f3f4f6",
+    color: darkMode ? "white" : "black",
+    fontSize: 15,
+  };
 }
