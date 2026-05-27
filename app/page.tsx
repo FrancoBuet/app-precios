@@ -9,18 +9,13 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   const [preview, setPreview] = useState("");
+
   const [productos, setProductos] = useState<any[]>([]);
 
   const [nombre, setNombre] = useState("");
-  const [tipo, setTipo] = useState("");
   const [presentacion, setPresentacion] = useState("");
   const [kilos, setKilos] = useState("");
-
-  const [precioMayorista, setPrecioMayorista] =
-    useState("");
-
-  const [precioPublico, setPrecioPublico] =
-    useState("");
+  const [precio, setPrecio] = useState("");
 
   const [oferta, setOferta] = useState(false);
 
@@ -30,11 +25,13 @@ export default function Home() {
   const [mostrarPublico, setMostrarPublico] =
     useState(true);
 
-  const [imagen, setImagen] = useState<File | null>(null);
+  const [imagen, setImagen] =
+    useState<File | null>(null);
 
   const [busqueda, setBusqueda] = useState("");
 
-  const [seccion, setSeccion] = useState("mayorista");
+  const [seccion, setSeccion] =
+    useState("mayorista");
 
   const [user, setUser] = useState<any>(null);
 
@@ -67,6 +64,7 @@ export default function Home() {
 
   async function cerrarSesion() {
     await supabase.auth.signOut();
+
     window.location.href = "/login";
   }
 
@@ -88,12 +86,8 @@ export default function Home() {
   }
 
   async function agregarProducto() {
-    if (
-      !nombre ||
-      !precioMayorista ||
-      !precioPublico
-    ) {
-      alert("Completa todos los precios");
+    if (!nombre || !precio) {
+      alert("Completa nombre y precio");
       return;
     }
 
@@ -111,7 +105,9 @@ export default function Home() {
 
       if (uploadError) {
         alert(uploadError.message);
+
         setLoading(false);
+
         return;
       }
 
@@ -122,38 +118,35 @@ export default function Home() {
       imagenUrl = data.publicUrl;
     }
 
+    const productoData = {
+      nombre,
+      presentacion,
+      kilos: Number(kilos),
+
+      precio: Number(precio),
+
+      mostrar_mayorista:
+        mostrarMayorista,
+
+      mostrar_publico:
+        mostrarPublico,
+
+      oferta,
+
+      imagen: imagenUrl,
+    };
+
     if (editandoId) {
       const { error } = await supabase
         .from("productos")
-        .update({
-          nombre,
-          tipo,
-          presentacion,
-          kilos: Number(kilos),
-
-          precio_mayorista: Number(
-            precioMayorista
-          ),
-
-          precio_publico: Number(
-            precioPublico
-          ),
-
-          mostrar_mayorista:
-            mostrarMayorista,
-
-          mostrar_publico:
-            mostrarPublico,
-
-          oferta,
-
-          imagen: imagenUrl,
-        })
+        .update(productoData)
         .eq("id", editandoId);
 
       if (error) {
         alert(error.message);
+
         setLoading(false);
+
         return;
       }
 
@@ -165,36 +158,13 @@ export default function Home() {
     } else {
       const { error } = await supabase
         .from("productos")
-        .insert([
-          {
-            nombre,
-            tipo,
-            presentacion,
-            kilos: Number(kilos),
-
-            precio_mayorista: Number(
-              precioMayorista
-            ),
-
-            precio_publico: Number(
-              precioPublico
-            ),
-
-            mostrar_mayorista:
-              mostrarMayorista,
-
-            mostrar_publico:
-              mostrarPublico,
-
-            oferta,
-
-            imagen: imagenUrl,
-          },
-        ]);
+        .insert([productoData]);
 
       if (error) {
         alert(error.message);
+
         setLoading(false);
+
         return;
       }
 
@@ -203,13 +173,18 @@ export default function Home() {
       );
     }
 
+    limpiarFormulario();
+
+    obtenerProductos();
+
+    setLoading(false);
+  }
+
+  function limpiarFormulario() {
     setNombre("");
-    setTipo("");
     setPresentacion("");
     setKilos("");
-
-    setPrecioMayorista("");
-    setPrecioPublico("");
+    setPrecio("");
 
     setOferta(false);
 
@@ -220,10 +195,6 @@ export default function Home() {
     setImagen(null);
 
     setPreview("");
-
-    obtenerProductos();
-
-    setLoading(false);
   }
 
   async function eliminarProducto(id: number) {
@@ -248,8 +219,6 @@ export default function Home() {
 
     setNombre(producto.nombre || "");
 
-    setTipo(producto.tipo || "");
-
     setPresentacion(
       producto.presentacion || ""
     );
@@ -258,14 +227,8 @@ export default function Home() {
       producto.kilos?.toString() || ""
     );
 
-    setPrecioMayorista(
-      producto.precio_mayorista?.toString() ||
-        ""
-    );
-
-    setPrecioPublico(
-      producto.precio_publico?.toString() ||
-        ""
+    setPrecio(
+      producto.precio?.toString() || ""
     );
 
     setOferta(producto.oferta || false);
@@ -290,26 +253,12 @@ export default function Home() {
         .includes(busqueda.toLowerCase())
   );
 
- if (seccion === "ofertas") {
-  productosFiltrados =
-    productosFiltrados.filter(
-      (p) => p.oferta
-    );
-}
-
-if (seccion === "mayorista") {
-  productosFiltrados =
-    productosFiltrados.filter(
-      (p) => p.mostrar_mayorista === true
-    );
-}
-
-if (seccion === "publico") {
-  productosFiltrados =
-    productosFiltrados.filter(
-      (p) => p.mostrar_publico === true
-    );
-}
+  if (seccion === "ofertas") {
+    productosFiltrados =
+      productosFiltrados.filter(
+        (p) => p.oferta
+      );
+  }
 
   if (seccion === "mayorista") {
     productosFiltrados =
@@ -328,7 +277,7 @@ if (seccion === "publico") {
   return (
     <div
       style={{
-        padding: 20,
+        padding: 15,
         backgroundColor: darkMode
           ? "#111827"
           : "#f3f4f6",
@@ -342,7 +291,7 @@ if (seccion === "publico") {
           justifyContent:
             "space-between",
           alignItems: "center",
-          marginBottom: 30,
+          marginBottom: 25,
           flexWrap: "wrap",
           gap: 15,
         }}
@@ -350,7 +299,7 @@ if (seccion === "publico") {
         <div>
           <h1
             style={{
-              fontSize: 38,
+              fontSize: 34,
               fontWeight: "bold",
             }}
           >
@@ -386,8 +335,7 @@ if (seccion === "publico") {
               onClick={cerrarSesion}
               style={{
                 ...botonHeader(darkMode),
-                backgroundColor:
-                  "#dc2626",
+                backgroundColor: "#dc2626",
                 color: "white",
               }}
             >
@@ -400,8 +348,7 @@ if (seccion === "publico") {
       {mensaje && (
         <div
           style={{
-            backgroundColor:
-              "#d1fae5",
+            backgroundColor: "#d1fae5",
             color: "#065f46",
             padding: 14,
             borderRadius: 12,
@@ -417,9 +364,9 @@ if (seccion === "publico") {
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 15,
-          marginBottom: 30,
+            "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 12,
+          marginBottom: 25,
         }}
       >
         <button
@@ -457,8 +404,11 @@ if (seccion === "publico") {
               darkMode
                 ? "#1f2937"
                 : "white",
+
             borderRadius: 20,
-            padding: 25,
+
+            padding: 20,
+
             marginBottom: 30,
           }}
         >
@@ -475,8 +425,10 @@ if (seccion === "publico") {
           <div
             style={{
               display: "grid",
+
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(250px, 1fr))",
+                "repeat(auto-fit, minmax(220px, 1fr))",
+
               gap: 15,
             }}
           >
@@ -485,17 +437,6 @@ if (seccion === "publico") {
               value={nombre}
               onChange={(e) =>
                 setNombre(
-                  e.target.value
-                )
-              }
-              style={inputStyle(darkMode)}
-            />
-
-            <input
-              placeholder="Tipo"
-              value={tipo}
-              onChange={(e) =>
-                setTipo(
                   e.target.value
                 )
               }
@@ -525,25 +466,11 @@ if (seccion === "publico") {
             />
 
             <input
-              placeholder="Precio Mayorista"
-              value={
-                precioMayorista
-              }
+              type="number"
+              placeholder="Precio"
+              value={precio}
               onChange={(e) =>
-                setPrecioMayorista(
-                  e.target.value
-                )
-              }
-              style={inputStyle(darkMode)}
-            />
-
-            <input
-              placeholder="Precio Público"
-              value={
-                precioPublico
-              }
-              onChange={(e) =>
-                setPrecioPublico(
+                setPrecio(
                   e.target.value
                 )
               }
@@ -564,58 +491,42 @@ if (seccion === "publico") {
 
                   const imageUrl =
                     URL.createObjectURL(
-                      e.target
-                        .files[0]
+                      e.target.files[0]
                     );
 
-                  setPreview(
-                    imageUrl
-                  );
+                  setPreview(imageUrl);
                 }
               }}
               style={inputStyle(darkMode)}
             />
           </div>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems:
-                "center",
-              gap: 10,
-              marginTop: 20,
-              fontWeight: "bold",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={oferta}
-              onChange={(e) =>
-                setOferta(
-                  e.target.checked
-                )
-              }
-            />
-
-            Producto en oferta
-          </label>
-
           <div
             style={{
+              marginTop: 20,
               display: "flex",
-              gap: 20,
-              marginTop: 15,
-              flexWrap: "wrap",
+              flexDirection: "column",
+              gap: 12,
             }}
           >
             <label
-              style={{
-                display: "flex",
-                alignItems:
-                  "center",
-                gap: 10,
-                fontWeight: "bold",
-              }}
+              style={checkboxStyle}
+            >
+              <input
+                type="checkbox"
+                checked={oferta}
+                onChange={(e) =>
+                  setOferta(
+                    e.target.checked
+                  )
+                }
+              />
+
+              Producto en oferta
+            </label>
+
+            <label
+              style={checkboxStyle}
             >
               <input
                 type="checkbox"
@@ -633,13 +544,7 @@ if (seccion === "publico") {
             </label>
 
             <label
-              style={{
-                display: "flex",
-                alignItems:
-                  "center",
-                gap: 10,
-                fontWeight: "bold",
-              }}
+              style={checkboxStyle}
             >
               <input
                 type="checkbox"
@@ -664,28 +569,27 @@ if (seccion === "publico") {
               style={{
                 width: "100%",
                 maxHeight: 300,
-                objectFit: "cover",
+                objectFit: "contain",
                 borderRadius: 15,
                 marginTop: 20,
+                backgroundColor: "#fff",
               }}
             />
           )}
 
           <button
-            onClick={
-              agregarProducto
-            }
+            onClick={agregarProducto}
             disabled={loading}
             style={{
               marginTop: 20,
               width: "100%",
               padding: 16,
-              backgroundColor:
-                "#16a34a",
+              backgroundColor: "#16a34a",
               color: "white",
               border: "none",
               borderRadius: 12,
               fontWeight: "bold",
+              fontSize: 16,
             }}
           >
             {loading
@@ -710,16 +614,18 @@ if (seccion === "publico") {
           padding: 16,
           borderRadius: 14,
           border: "none",
-          marginBottom: 30,
+          marginBottom: 25,
         }}
       />
 
       <div
         style={{
           display: "grid",
+
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: 25,
+            "repeat(auto-fit, minmax(260px, 1fr))",
+
+          gap: 20,
         }}
       >
         {productosFiltrados.map(
@@ -731,41 +637,53 @@ if (seccion === "publico") {
                   darkMode
                     ? "#1f2937"
                     : "white",
+
                 borderRadius: 22,
-                overflow:
-                  "hidden",
+
+                overflow: "hidden",
+
+                boxShadow:
+                  "0 5px 20px rgba(0,0,0,0.08)",
               }}
             >
-              <img
-                src={
-                  producto.imagen ||
-                  "https://via.placeholder.com/400x300?text=Producto"
-                }
-                alt={
-                  producto.nombre
-                }
+              <div
                 style={{
                   width: "100%",
-                  height: 240,
-                  objectFit:
-                    "cover",
+                  height: 230,
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <img
+                  src={
+                    producto.imagen ||
+                    "https://via.placeholder.com/400x300?text=Producto"
+                  }
+                  alt={producto.nombre}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
 
               <div
                 style={{
-                  padding: 20,
+                  padding: 18,
                 }}
               >
                 <h2
                   style={{
-                    fontSize: 30,
+                    fontSize: 28,
                     marginBottom: 10,
+                    wordBreak: "break-word",
                   }}
                 >
-                  {
-                    producto.nombre
-                  }
+                  {producto.nombre}
                 </h2>
 
                 <p>
@@ -776,48 +694,24 @@ if (seccion === "publico") {
                 </p>
 
                 <p>
-                  Kg:{" "}
-                  {
-                    producto.kilos
-                  }
+                  Kg: {producto.kilos}
                 </p>
 
-                {seccion ===
-                "mayorista" ? (
-                  <p
-                    style={{
-                      fontSize: 34,
-                      fontWeight:
-                        "bold",
-                      color:
-                        "#2563eb",
-                    }}
-                  >
-                    $
-                    {Number(
-                      producto.precio_mayorista
-                    ).toLocaleString(
-                      "es-AR"
-                    )}
-                  </p>
-                ) : (
-                  <p
-                    style={{
-                      fontSize: 34,
-                      fontWeight:
-                        "bold",
-                      color:
-                        "#16a34a",
-                    }}
-                  >
-                    $
-                    {Number(
-                      producto.precio_publico
-                    ).toLocaleString(
-                      "es-AR"
-                    )}
-                  </p>
-                )}
+                <p
+                  style={{
+                    fontSize: 34,
+                    fontWeight: "bold",
+                    color: "#16a34a",
+                    marginTop: 15,
+                  }}
+                >
+                  $
+                  {Number(
+                    producto.precio
+                  ).toLocaleString(
+                    "es-AR"
+                  )}
+                </p>
 
                 {producto.oferta && (
                   <div
@@ -825,18 +719,22 @@ if (seccion === "publico") {
                       marginTop: 10,
                       backgroundColor:
                         "#dc2626",
-                      color:
-                        "white",
+
+                      color: "white",
+
                       padding:
                         "6px 12px",
+
                       borderRadius: 999,
+
                       display:
                         "inline-block",
+
                       fontWeight:
                         "bold",
                     }}
                   >
-                    OFERTA
+                    🔥 OFERTA
                   </div>
                 )}
 
@@ -903,13 +801,19 @@ function botonHeader(
     backgroundColor: darkMode
       ? "#facc15"
       : "#111",
+
     color: darkMode
       ? "black"
       : "white",
+
     border: "none",
+
     padding: "10px 16px",
+
     borderRadius: 10,
+
     cursor: "pointer",
+
     fontWeight: "bold",
   };
 }
@@ -917,12 +821,19 @@ function botonHeader(
 function menuStyle(color: string) {
   return {
     backgroundColor: color,
+
     color: "white",
+
     border: "none",
+
     borderRadius: 18,
-    padding: 25,
-    fontSize: 22,
+
+    padding: 22,
+
+    fontSize: 20,
+
     fontWeight: "bold",
+
     cursor: "pointer",
   };
 }
@@ -930,13 +841,28 @@ function menuStyle(color: string) {
 function botonCard(color: string) {
   return {
     width: "100%",
+
     padding: 12,
+
     backgroundColor: color,
+
     color: "white",
+
     border: "none",
+
     borderRadius: 10,
+
     marginTop: 10,
+
     cursor: "pointer",
+
     fontWeight: "bold",
   };
 }
+
+const checkboxStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  fontWeight: "bold",
+};
