@@ -636,7 +636,8 @@ export default function Home() {
                 style={{
                   width: "100%",
                   maxHeight: 320,
-                  objectFit: "contain",
+                  objectFit: "cover",
+transition: "0.3s ease",
                 }}
               />
             </div>
@@ -937,15 +938,21 @@ function inputStyle(
   return {
     width: "100%",
 
-    padding: 16,
+    padding: "16px 18px",
 
-    borderRadius: 16,
+    borderRadius: 18,
 
-    border: "none",
+    border: darkMode
+      ? "1px solid rgba(255,255,255,0.08)"
+      : "1px solid rgba(255,255,255,0.7)",
 
-    backgroundColor: darkMode
-      ? "#1e293b"
-      : "#f8fafc",
+    background: darkMode
+      ? "rgba(55, 65, 81, 0.55)"
+      : "rgba(255,255,255,0.75)",
+
+    backdropFilter: "blur(10px)",
+
+    WebkitBackdropFilter: "blur(10px)",
 
     color: darkMode
       ? "white"
@@ -954,6 +961,12 @@ function inputStyle(
     fontSize: 15,
 
     outline: "none",
+
+    transition: "0.25s ease",
+
+    boxShadow: darkMode
+      ? "0 4px 20px rgba(0,0,0,0.25)"
+      : "0 4px 20px rgba(0,0,0,0.06)",
   };
 }
 
@@ -962,24 +975,29 @@ function botonHeader(
 ) {
   return {
     background: darkMode
-      ? "linear-gradient(135deg,#facc15,#fde047)"
+      ? "linear-gradient(135deg,#facc15,#eab308)"
       : "linear-gradient(135deg,#111827,#1f2937)",
 
     color: darkMode
-      ? "black"
+      ? "#111"
       : "white",
 
     border: "none",
 
     padding: "12px 18px",
 
-    borderRadius: 14,
+    borderRadius: 16,
 
     cursor: "pointer",
 
     fontWeight: "bold",
 
     fontSize: 15,
+
+    transition: "0.25s ease",
+
+    boxShadow:
+      "0 8px 20px rgba(0,0,0,0.15)",
   };
 }
 
@@ -990,31 +1008,38 @@ function menuStyle(
   return {
     background: active
       ? `linear-gradient(135deg, ${color}, ${color})`
-      : "#ffffff20",
+      : "rgba(255,255,255,0.08)",
 
     color: "white",
 
     border: active
       ? "none"
-      : "1px solid rgba(255,255,255,0.12)",
+      : "1px solid rgba(255,255,255,0.15)",
 
-    borderRadius: 22,
+    borderRadius: 24,
 
     padding: 22,
 
-    fontSize: 19,
+    fontSize: 20,
 
     fontWeight: "bold",
 
     cursor: "pointer",
 
-    backdropFilter: "blur(10px)",
+    transition: "0.25s ease",
 
     transform: active
       ? "scale(1.03)"
       : "scale(1)",
 
-    transition: "0.2s",
+    boxShadow: active
+      ? "0 12px 30px rgba(0,0,0,0.20)"
+      : "0 6px 18px rgba(0,0,0,0.08)",
+
+    backdropFilter: "blur(10px)",
+
+    WebkitBackdropFilter:
+      "blur(10px)",
   };
 }
 
@@ -1024,13 +1049,13 @@ function botonCard(color: string) {
 
     padding: 14,
 
-    background: `linear-gradient(135deg, ${color}, ${color})`,
+    background: `linear-gradient(135deg, ${color}, ${color}dd)`,
 
     color: "white",
 
     border: "none",
 
-    borderRadius: 14,
+    borderRadius: 16,
 
     marginTop: 12,
 
@@ -1039,6 +1064,11 @@ function botonCard(color: string) {
     fontWeight: "bold",
 
     fontSize: 15,
+
+    transition: "0.25s ease",
+
+    boxShadow:
+      "0 8px 20px rgba(0,0,0,0.15)",
   };
 }
 
@@ -1047,15 +1077,15 @@ const checkboxStyle = {
 
   alignItems: "center",
 
-  gap: 10,
+  gap: 12,
 
   fontWeight: "bold",
 
-  background: "rgba(255,255,255,0.08)",
-
-  padding: "10px 14px",
+  padding: "12px 14px",
 
   borderRadius: 14,
+
+  background: "rgba(255,255,255,0.05)",
 };
 
 const badgeOferta = {
