@@ -303,7 +303,34 @@ if (imagen) {
   }}
 >
   {editandoId ? "Guardar Cambios" : "Agregar Producto"}
+
 </button>
+
+{editandoId && (
+  <button
+    onClick={() => {
+      setEditandoId(null);
+      setNombre("");
+      setTipo("");
+      setPresentacion("");
+      setKilos("");
+      setPrecio("");
+      setImagen(null);
+    }}
+    style={{
+      marginTop: 10,
+      padding: 12,
+      width: "100%",
+      backgroundColor: "#666",
+      color: "white",
+      border: "none",
+      borderRadius: 8,
+      cursor: "pointer",
+    }}
+  >
+    Cancelar edición
+  </button>
+)}
         </div>
       )}
 
