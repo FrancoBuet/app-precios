@@ -5,11 +5,8 @@ import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
   const [preview, setPreview] = useState("");
-
   const [productos, setProductos] = useState<any[]>([]);
 
   const [nombre, setNombre] = useState("");
@@ -18,7 +15,6 @@ export default function Home() {
   const [precio, setPrecio] = useState("");
 
   const [oferta, setOferta] = useState(false);
-
   const [mostrarMayorista, setMostrarMayorista] =
     useState(true);
 
@@ -29,7 +25,6 @@ export default function Home() {
     useState<File | null>(null);
 
   const [busqueda, setBusqueda] = useState("");
-
   const [seccion, setSeccion] =
     useState("mayorista");
 
@@ -64,7 +59,6 @@ export default function Home() {
 
   async function cerrarSesion() {
     await supabase.auth.signOut();
-
     window.location.href = "/login";
   }
 
@@ -105,9 +99,7 @@ export default function Home() {
 
       if (uploadError) {
         alert(uploadError.message);
-
         setLoading(false);
-
         return;
       }
 
@@ -122,17 +114,12 @@ export default function Home() {
       nombre,
       presentacion,
       kilos: Number(kilos),
-
       precio: Number(precio),
-
       mostrar_mayorista:
         mostrarMayorista,
-
       mostrar_publico:
         mostrarPublico,
-
       oferta,
-
       imagen: imagenUrl,
     };
 
@@ -144,9 +131,7 @@ export default function Home() {
 
       if (error) {
         alert(error.message);
-
         setLoading(false);
-
         return;
       }
 
@@ -162,9 +147,7 @@ export default function Home() {
 
       if (error) {
         alert(error.message);
-
         setLoading(false);
-
         return;
       }
 
@@ -174,9 +157,7 @@ export default function Home() {
     }
 
     limpiarFormulario();
-
     obtenerProductos();
-
     setLoading(false);
   }
 
@@ -189,11 +170,9 @@ export default function Home() {
     setOferta(false);
 
     setMostrarMayorista(true);
-
     setMostrarPublico(true);
 
     setImagen(null);
-
     setPreview("");
   }
 
@@ -249,7 +228,7 @@ export default function Home() {
   let productosFiltrados = productos.filter(
     (producto) =>
       producto.nombre
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(busqueda.toLowerCase())
   );
 
@@ -278,82 +257,99 @@ export default function Home() {
     <div
       style={{
         padding: 15,
-
         background: darkMode
           ? "linear-gradient(180deg, #020617 0%, #111827 100%)"
           : "linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%)",
-
         minHeight: "100vh",
-
         color: darkMode ? "white" : "#111827",
-
         transition: "0.3s",
       }}
     >
-      {/* HEADER */}
+     {/* HEADER */}
 
-      <div
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 30,
+    gap: 15,
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 14,
+      flex: 1,
+    }}
+  >
+    <img
+      src="/logo.png"
+      alt="logo"
+      style={{
+        width: 75,
+        height: 75,
+        borderRadius: 20,
+        objectFit: "cover",
+        boxShadow:
+          "0 8px 20px rgba(0,0,0,0.15)",
+      }}
+    />
+
+    <div>
+      <h1
         style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          marginBottom: 30,
-          flexWrap: "wrap",
-          gap: 15,
+          fontSize: window.innerWidth < 600 ? 34 : 42,
+          fontWeight: "900",
+          marginBottom: 2,
+          lineHeight: 1,
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: 42,
-              fontWeight: "bold",
-              marginBottom: 5,
-            }}
-          >
-            🛍️ Mi Catálogo
-          </h1>
+        EL NONO COQUI
+      </h1>
 
-          <p
-            style={{
-              opacity: 0.7,
-              fontSize: 16,
-            }}
-          >
-            Panel Mayorista & Público
-          </p>
-        </div>
+      <p
+        style={{
+          opacity: 0.7,
+          fontSize: 16,
+        }}
+      >
+        Esperanza - Santa Fe
+      </p>
+    </div>
+  </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-          }}
-        >
-          <button
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            style={botonHeader(darkMode)}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
+  <div
+    style={{
+      display: "flex",
+      gap: 10,
+    }}
+  >
+    <button
+      onClick={() =>
+        setDarkMode(!darkMode)
+      }
+      style={botonHeader(darkMode)}
+    >
+      {darkMode ? "☀️" : "🌙"}
+    </button>
 
-          {user && (
-            <button
-              onClick={cerrarSesion}
-              style={{
-                ...botonHeader(darkMode),
-                background:
-                  "linear-gradient(135deg,#dc2626,#ef4444)",
-                color: "white",
-              }}
-            >
-              Salir
-            </button>
-          )}
-        </div>
-      </div>
+    {user && (
+      <button
+        onClick={cerrarSesion}
+        style={{
+          ...botonHeader(darkMode),
+          background:
+            "linear-gradient(135deg,#dc2626,#ef4444)",
+          color: "white",
+        }}
+      >
+        Salir
+      </button>
+    )}
+  </div>
+</div>
 
       {/* MENSAJE */}
 
@@ -362,19 +358,11 @@ export default function Home() {
           style={{
             background:
               "linear-gradient(135deg,#10b981,#34d399)",
-
             color: "white",
-
             padding: 16,
-
             borderRadius: 18,
-
             marginBottom: 25,
-
             fontWeight: "bold",
-
-            boxShadow:
-              "0 10px 25px rgba(16,185,129,0.25)",
           }}
         >
           {mensaje}
@@ -387,10 +375,8 @@ export default function Home() {
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(150px, 1fr))",
-
-          gap: 15,
-
+            "repeat(auto-fit, minmax(120px, 1fr))",
+          gap: 12,
           marginBottom: 30,
         }}
       >
@@ -440,30 +426,15 @@ export default function Home() {
               darkMode
                 ? "rgba(17,24,39,0.65)"
                 : "rgba(255,255,255,0.7)",
-
-            backdropFilter: "blur(16px)",
-
-            WebkitBackdropFilter:
-              "blur(16px)",
-
             borderRadius: 30,
-
-            padding: 25,
-
+            padding: 20,
             marginBottom: 35,
-
-            border: darkMode
-              ? "1px solid rgba(255,255,255,0.08)"
-              : "1px solid rgba(255,255,255,0.6)",
-
-            boxShadow:
-              "0 15px 45px rgba(0,0,0,0.08)",
           }}
         >
           <h2
             style={{
               marginBottom: 20,
-              fontSize: 28,
+              fontSize: 24,
             }}
           >
             {editandoId
@@ -474,10 +445,8 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-
+                "repeat(auto-fit, minmax(180px, 1fr))",
               gap: 15,
             }}
           >
@@ -550,22 +519,15 @@ export default function Home() {
             />
           </div>
 
-          {/* CHECKS */}
-
           <div
             style={{
-              marginTop: 22,
-
+              marginTop: 20,
               display: "flex",
-
               flexWrap: "wrap",
-
-              gap: 20,
+              gap: 12,
             }}
           >
-            <label
-              style={checkboxStyle}
-            >
+            <label style={checkboxStyle}>
               <input
                 type="checkbox"
                 checked={oferta}
@@ -575,13 +537,10 @@ export default function Home() {
                   )
                 }
               />
-
-              🔥 Producto en oferta
+              🔥 Oferta
             </label>
 
-            <label
-              style={checkboxStyle}
-            >
+            <label style={checkboxStyle}>
               <input
                 type="checkbox"
                 checked={
@@ -593,13 +552,10 @@ export default function Home() {
                   )
                 }
               />
-
               📦 Mayorista
             </label>
 
-            <label
-              style={checkboxStyle}
-            >
+            <label style={checkboxStyle}>
               <input
                 type="checkbox"
                 checked={
@@ -611,67 +567,39 @@ export default function Home() {
                   )
                 }
               />
-
               🛒 Público
             </label>
           </div>
 
-          {/* PREVIEW */}
-
           {preview && (
-            <div
+            <img
+              src={preview}
+              alt="preview"
               style={{
-                marginTop: 25,
-
+                width: "100%",
+                maxHeight: 300,
+                objectFit: "cover",
+                marginTop: 20,
                 borderRadius: 20,
-
-                overflow: "hidden",
-
-                backgroundColor: "#fff",
               }}
-            >
-              <img
-                src={preview}
-                alt="preview"
-                style={{
-                  width: "100%",
-                  maxHeight: 320,
-                  objectFit: "cover",
-transition: "0.3s ease",
-                }}
-              />
-            </div>
+            />
           )}
-
-          {/* BOTON */}
 
           <button
             onClick={agregarProducto}
             disabled={loading}
             style={{
               marginTop: 25,
-
               width: "100%",
-
               padding: 18,
-
               background:
                 "linear-gradient(135deg,#16a34a,#22c55e)",
-
               color: "white",
-
               border: "none",
-
               borderRadius: 18,
-
               fontWeight: "bold",
-
               fontSize: 17,
-
               cursor: "pointer",
-
-              boxShadow:
-                "0 10px 25px rgba(34,197,94,0.25)",
             }}
           >
             {loading
@@ -695,21 +623,12 @@ transition: "0.3s ease",
         }
         style={{
           width: "100%",
-
-          padding: 18,
-
+          padding: 16,
           borderRadius: 18,
-
           border: "none",
-
           marginBottom: 30,
-
           fontSize: 16,
-
           outline: "none",
-
-          boxShadow:
-            "0 5px 20px rgba(0,0,0,0.06)",
         }}
       />
 
@@ -718,215 +637,286 @@ transition: "0.3s ease",
       <div
         style={{
           display: "grid",
-
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(280px, 1fr))",
-
-          gap: 22,
+            "repeat(auto-fit, minmax(250px, 1fr))",
+          gap: 20,
         }}
       >
         {productosFiltrados.map(
-          (producto) => (
-            <div
-              key={producto.id}
+  (producto) => (
+    <div
+      key={producto.id}
+      style={{
+        background: darkMode
+          ? "rgba(17,24,39,0.72)"
+          : "rgba(255,255,255,0.88)",
+
+        borderRadius: 32,
+
+        overflow: "hidden",
+
+        boxShadow:
+          darkMode
+            ? "0 15px 40px rgba(0,0,0,0.35)"
+            : "0 15px 40px rgba(0,0,0,0.10)",
+
+        transition: "0.3s ease",
+
+        backdropFilter: "blur(14px)",
+
+        border: darkMode
+          ? "1px solid rgba(255,255,255,0.06)"
+          : "1px solid rgba(255,255,255,0.7)",
+      }}
+    >
+      {/* IMAGEN */}
+
+      <div
+        style={{
+          width: "100%",
+          height: 250,
+          background: "#fff",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {producto.oferta && (
+          <div
+            style={{
+              position: "absolute",
+              top: 14,
+              right: 14,
+              zIndex: 10,
+
+              background:
+                "linear-gradient(135deg,#ef4444,#dc2626)",
+
+              color: "white",
+
+              padding: "8px 14px",
+
+              borderRadius: 999,
+
+              fontWeight: "bold",
+
+              fontSize: 13,
+
+              boxShadow:
+                "0 6px 18px rgba(239,68,68,0.35)",
+            }}
+          >
+            🔥 OFERTA
+          </div>
+        )}
+
+        <img
+          src={
+            producto.imagen ||
+            "https://via.placeholder.com/400x300?text=Producto"
+          }
+          alt={producto.nombre}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            padding: 14,
+            transition: "0.35s ease",
+          }}
+        />
+      </div>
+
+      {/* INFO */}
+
+      <div
+        style={{
+          padding: 22,
+        }}
+      >
+        <h2
+          style={{
+            fontSize: 28,
+            fontWeight: "800",
+            marginBottom: 12,
+            lineHeight: 1.1,
+          }}
+        >
+          {producto.nombre}
+        </h2>
+
+        <p
+          style={{
+            opacity: 0.8,
+            marginBottom: 6,
+            fontSize: 15,
+          }}
+        >
+          📦 {producto.presentacion}
+        </p>
+
+        <p
+          style={{
+            opacity: 0.8,
+            fontSize: 15,
+          }}
+        >
+          ⚖️ {producto.kilos} Kg
+        </p>
+
+        {/* PRECIO */}
+
+        <div
+          style={{
+            marginTop: 20,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 42,
+              fontWeight: "900",
+              color: "#16a34a",
+              lineHeight: 1,
+            }}
+          >
+            $
+            {Number(
+              producto.precio
+            ).toLocaleString("es-AR")}
+          </p>
+
+          <span
+            style={{
+              opacity: 0.6,
+              fontSize: 14,
+            }}
+          >
+            precio final
+          </span>
+        </div>
+
+        {/* BADGES */}
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            marginTop: 18,
+          }}
+        >
+          {producto.mostrar_publico && (
+            <div style={badgePublico}>
+              🛒 Público
+            </div>
+          )}
+
+          {producto.mostrar_mayorista && (
+            <div style={badgeMayorista}>
+              📦 Mayorista
+            </div>
+          )}
+        </div>
+
+        {/* BOTONES CLIENTE */}
+
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 22,
+          }}
+        >
+          <a
+            href={`https://wa.me/5493496550978?text=Hola! Quiero consultar por ${producto.nombre}`}
+            target="_blank"
+            style={{
+              flex: 1,
+              textDecoration: "none",
+            }}
+          >
+            <button
               style={{
+                width: "100%",
+                padding: 15,
+
                 background:
-                  darkMode
-                    ? "rgba(17,24,39,0.72)"
-                    : "rgba(255,255,255,0.8)",
+                  "linear-gradient(135deg,#16a34a,#22c55e)",
 
-                backdropFilter:
-                  "blur(14px)",
+                color: "white",
 
-                WebkitBackdropFilter:
-                  "blur(14px)",
+                border: "none",
 
-                borderRadius: 30,
+                borderRadius: 16,
 
-                overflow: "hidden",
-
-                border: darkMode
-                  ? "1px solid rgba(255,255,255,0.06)"
-                  : "1px solid rgba(255,255,255,0.6)",
-
-                boxShadow:
-                  "0 15px 45px rgba(0,0,0,0.12)",
-
-                transition:
-                  "0.25s ease",
+                fontWeight: "bold",
 
                 cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform =
-                  "translateY(-8px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform =
-                  "translateY(0px)";
+
+                fontSize: 15,
               }}
             >
-              {/* IMAGEN */}
+              WhatsApp
+            </button>
+          </a>
 
-              <div
-                style={{
-                  width: "100%",
-                  height: 260,
-                  backgroundColor: "#fff",
+          <button
+            onClick={() => {
+              navigator.share?.({
+                title: producto.nombre,
+                text: `Mirá este producto: ${producto.nombre}`,
+                url: window.location.href,
+              });
+            }}
+            style={{
+              padding: 15,
 
-                  display: "flex",
+              background: darkMode
+                ? "#1f2937"
+                : "#e5e7eb",
 
-                  alignItems: "center",
+              color: darkMode
+                ? "white"
+                : "#111827",
 
-                  justifyContent: "center",
+              border: "none",
 
-                  overflow: "hidden",
-                }}
-              >
-                <img
-                  src={
-                    producto.imagen ||
-                    "https://via.placeholder.com/400x300?text=Producto"
-                  }
-                  alt={producto.nombre}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
+              borderRadius: 16,
 
-                    padding: 12,
-                  }}
-                />
-              </div>
+              cursor: "pointer",
 
-              {/* INFO */}
+              fontWeight: "bold",
+            }}
+          >
+            ↗
+          </button>
+        </div>
 
-              <div
-                style={{
-                  padding: 22,
-                }}
-              >
-                <h2
-                  style={{
-                    fontSize: 28,
+        {/* ADMIN */}
 
-                    marginBottom: 10,
+        {user && (
+          <>
+            <button
+              onClick={() =>
+                editarProducto(producto)
+              }
+              style={botonCard("#f59e0b")}
+            >
+              ✏️ Editar
+            </button>
 
-                    wordBreak:
-                      "break-word",
-                  }}
-                >
-                  {producto.nombre}
-                </h2>
-
-                <p
-                  style={{
-                    opacity: 0.8,
-                    marginBottom: 6,
-                  }}
-                >
-                  📦 {producto.presentacion}
-                </p>
-
-                <p
-                  style={{
-                    opacity: 0.8,
-                  }}
-                >
-                  ⚖️ {producto.kilos} Kg
-                </p>
-
-                {/* PRECIO */}
-
-                <p
-                  style={{
-                    fontSize: 38,
-
-                    fontWeight: "bold",
-
-                    color: "#22c55e",
-
-                    marginTop: 18,
-                  }}
-                >
-                  $
-                  {Number(
-                    producto.precio
-                  ).toLocaleString(
-                    "es-AR"
-                  )}
-                </p>
-
-                {/* BADGES */}
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    marginTop: 15,
-                  }}
-                >
-                  {producto.oferta && (
-                    <div
-                      style={badgeOferta}
-                    >
-                      🔥 OFERTA
-                    </div>
-                  )}
-
-                  {producto.mostrar_mayorista && (
-                    <div
-                      style={badgeMayorista}
-                    >
-                      📦 Mayorista
-                    </div>
-                  )}
-
-                  {producto.mostrar_publico && (
-                    <div
-                      style={badgePublico}
-                    >
-                      🛒 Público
-                    </div>
-                  )}
-                </div>
-
-                {/* BOTONES */}
-
-                {user && (
-                  <>
-                    <button
-                      onClick={() =>
-                        editarProducto(
-                          producto
-                        )
-                      }
-                      style={botonCard(
-                        "#f59e0b"
-                      )}
-                    >
-                      ✏️ Editar
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        eliminarProducto(
-                          producto.id
-                        )
-                      }
-                      style={botonCard(
-                        "#dc2626"
-                      )}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )
+            <button
+              onClick={() =>
+                eliminarProducto(producto.id)
+              }
+              style={botonCard("#dc2626")}
+            >
+              🗑️ Eliminar
+            </button>
+          </>
         )}
+      </div>
+    </div>
+  )
+)}
       </div>
     </div>
   );
@@ -934,201 +924,113 @@ transition: "0.3s ease",
 
 function inputStyle(
   darkMode: boolean
-) {
+): React.CSSProperties {
   return {
     width: "100%",
-
-    padding: "16px 18px",
-
-    borderRadius: 18,
-
-    border: darkMode
-      ? "1px solid rgba(255,255,255,0.08)"
-      : "1px solid rgba(255,255,255,0.7)",
-
+    padding: "14px 16px",
+    borderRadius: 16,
+    border: "none",
     background: darkMode
-      ? "rgba(55, 65, 81, 0.55)"
-      : "rgba(255,255,255,0.75)",
-
-    backdropFilter: "blur(10px)",
-
-    WebkitBackdropFilter: "blur(10px)",
-
+      ? "#374151"
+      : "#ffffff",
     color: darkMode
       ? "white"
       : "#111827",
-
     fontSize: 15,
-
     outline: "none",
-
-    transition: "0.25s ease",
-
-    boxShadow: darkMode
-      ? "0 4px 20px rgba(0,0,0,0.25)"
-      : "0 4px 20px rgba(0,0,0,0.06)",
   };
 }
 
 function botonHeader(
   darkMode: boolean
-) {
+): React.CSSProperties {
   return {
     background: darkMode
       ? "linear-gradient(135deg,#facc15,#eab308)"
       : "linear-gradient(135deg,#111827,#1f2937)",
-
     color: darkMode
       ? "#111"
       : "white",
-
     border: "none",
-
     padding: "12px 18px",
-
     borderRadius: 16,
-
     cursor: "pointer",
-
     fontWeight: "bold",
-
     fontSize: 15,
-
-    transition: "0.25s ease",
-
-    boxShadow:
-      "0 8px 20px rgba(0,0,0,0.15)",
   };
 }
 
 function menuStyle(
   color: string,
   active: boolean
-) {
+): React.CSSProperties {
   return {
     background: active
-      ? `linear-gradient(135deg, ${color}, ${color})`
-      : "rgba(255,255,255,0.08)",
-
+      ? color
+      : "rgba(255,255,255,0.12)",
     color: "white",
-
-    border: active
-      ? "none"
-      : "1px solid rgba(255,255,255,0.15)",
-
-    borderRadius: 24,
-
-    padding: 22,
-
-    fontSize: 20,
-
+    border: "none",
+    borderRadius: 20,
+    padding: 18,
+    fontSize: 16,
     fontWeight: "bold",
-
     cursor: "pointer",
-
-    transition: "0.25s ease",
-
-    transform: active
-      ? "scale(1.03)"
-      : "scale(1)",
-
-    boxShadow: active
-      ? "0 12px 30px rgba(0,0,0,0.20)"
-      : "0 6px 18px rgba(0,0,0,0.08)",
-
-    backdropFilter: "blur(10px)",
-
-    WebkitBackdropFilter:
-      "blur(10px)",
   };
 }
 
-function botonCard(color: string) {
+function botonCard(
+  color: string
+): React.CSSProperties {
   return {
     width: "100%",
-
     padding: 14,
-
-    background: `linear-gradient(135deg, ${color}, ${color}dd)`,
-
+    background: color,
     color: "white",
-
     border: "none",
-
-    borderRadius: 16,
-
+    borderRadius: 14,
     marginTop: 12,
-
     cursor: "pointer",
-
     fontWeight: "bold",
-
     fontSize: 15,
-
-    transition: "0.25s ease",
-
-    boxShadow:
-      "0 8px 20px rgba(0,0,0,0.15)",
   };
 }
 
-const checkboxStyle = {
+const checkboxStyle: React.CSSProperties = {
   display: "flex",
-
   alignItems: "center",
-
-  gap: 12,
-
+  gap: 10,
   fontWeight: "bold",
-
-  padding: "12px 14px",
-
+  padding: "10px 14px",
   borderRadius: 14,
-
-  background: "rgba(255,255,255,0.05)",
+  background: "rgba(255,255,255,0.08)",
 };
 
-const badgeOferta = {
+const badgeOferta: React.CSSProperties = {
   background:
     "linear-gradient(135deg,#dc2626,#ef4444)",
-
   color: "white",
-
-  padding: "7px 12px",
-
+  padding: "6px 12px",
   borderRadius: 999,
-
   fontWeight: "bold",
-
   fontSize: 12,
 };
 
-const badgeMayorista = {
+const badgeMayorista: React.CSSProperties = {
   background:
     "linear-gradient(135deg,#2563eb,#3b82f6)",
-
   color: "white",
-
-  padding: "7px 12px",
-
+  padding: "6px 12px",
   borderRadius: 999,
-
   fontWeight: "bold",
-
   fontSize: 12,
 };
 
-const badgePublico = {
+const badgePublico: React.CSSProperties = {
   background:
     "linear-gradient(135deg,#16a34a,#22c55e)",
-
   color: "white",
-
-  padding: "7px 12px",
-
+  padding: "6px 12px",
   borderRadius: 999,
-
   fontWeight: "bold",
-
   fontSize: 12,
 };
