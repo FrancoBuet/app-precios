@@ -27,31 +27,33 @@ export default function Home() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
   const [mensaje, setMensaje] = useState("");
+  const [listaCompartida, setListaCompartida] = useState("");
 
- useEffect(() => {
-  const temaGuardado = localStorage.getItem("darkMode");
+  useEffect(() => {
+    const temaGuardado = localStorage.getItem("darkMode");
 
-  if (temaGuardado === "true") {
-    setDarkMode(true);
-  }
+    if (temaGuardado === "true") {
+      setDarkMode(true);
+    }
 
-  const params = new URLSearchParams(window.location.search);
-  const lista = params.get("lista");
+    const params = new URLSearchParams(window.location.search);
+    const lista = params.get("lista");
 
   if (
-    lista === "publico" ||
-    lista === "mayorista" ||
-    lista === "ofertas"
-  ) {
-    setSeccion(lista);
-  }
+  lista === "publico" ||
+  lista === "mayorista" ||
+  lista === "ofertas"
+) {
+  setSeccion(lista);
+  setListaCompartida(lista);
+}
 
-  supabase.auth.getUser().then(({ data }) => {
-    setUser(data.user);
-  });
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
 
-  obtenerProductos();
-}, []);
+    obtenerProductos();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("darkMode", darkMode.toString());
@@ -324,37 +326,131 @@ export default function Home() {
         </div>
       )}
 
-      {/* MENU */}
+     {/* MENU + COMPARTIR */}
 
-      <div
+{!listaCompartida && (
+  <div
+    style={{
+      display: "grid",
+    gridTemplateColumns:
+  "repeat(auto-fit, minmax(170px, 1fr))",
+gap: 12,
+      gap: 12,
+      marginBottom: 30,
+    }}
+  >
+    <div>
+      <button
+        onClick={() => setSeccion("ofertas")}
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-          gap: 12,
-          marginBottom: 30,
+          ...menuStyle("#dc2626", seccion === "ofertas"),
+          width: "100%",
         }}
       >
-        <button
-          onClick={() => setSeccion("ofertas")}
-          style={menuStyle("#dc2626", seccion === "ofertas")}
-        >
-          🔥 Ofertas
-        </button>
+        🔥 Ofertas
+      </button>
 
+      {user && (
         <button
-          onClick={() => setSeccion("mayorista")}
-          style={menuStyle("#2563eb", seccion === "mayorista")}
+          onClick={() => {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/?lista=ofertas`
+            );
+            mostrarMensaje("Link ofertas copiado");
+          }}
+          style={{
+            ...botonCompartir("#dc2626"),
+            marginTop: 10,
+          }}
         >
-          📦 Mayorista
+          📤 Compartir Ofertas
         </button>
+      )}
+    </div>
 
+    <div>
+      <button
+        onClick={() => setSeccion("mayorista")}
+        style={{
+          ...menuStyle("#2563eb", seccion === "mayorista"),
+          width: "100%",
+        }}
+      >
+        📦 Mayorista
+      </button>
+
+      {user && (
         <button
-          onClick={() => setSeccion("publico")}
-          style={menuStyle("#16a34a", seccion === "publico")}
+          onClick={() => {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/?lista=mayorista`
+            );
+            mostrarMensaje("Link mayorista copiado");
+          }}
+          style={{
+            ...botonCompartir("#2563eb"),
+            marginTop: 10,
+          }}
         >
-          🛒 Público
+          📤 Compartir Mayorista
         </button>
-      </div>
+      )}
+    </div>
+
+    <div>
+      <button
+        onClick={() => setSeccion("publico")}
+        style={{
+          ...menuStyle("#16a34a", seccion === "publico"),
+          width: "100%",
+        }}
+      >
+        🛒 Público
+      </button>
+
+      {user && (
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/?lista=publico`
+            );
+            mostrarMensaje("Link público copiado");
+          }}
+          style={{
+            ...botonCompartir("#16a34a"),
+            marginTop: 10,
+          }}
+        >
+          📤 Compartir Público
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
+{listaCompartida && (
+  <div
+    style={{
+      marginBottom: 30,
+      padding: 18,
+      borderRadius: 20,
+      background:
+        listaCompartida === "ofertas"
+          ? "#dc2626"
+          : listaCompartida === "mayorista"
+          ? "#2563eb"
+          : "#16a34a",
+      color: "white",
+      fontWeight: "bold",
+      fontSize: 18,
+      textAlign: "center",
+    }}
+  >
+    {listaCompartida === "ofertas" && "🔥 Lista de Ofertas"}
+    {listaCompartida === "mayorista" && "📦 Lista Mayorista"}
+    {listaCompartida === "publico" && "🛒 Lista Público"}
+  </div>
+)}
 
       {/* FORMULARIO */}
 
@@ -528,7 +624,7 @@ export default function Home() {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: 20,
+          gap: 12,
         }}
       >
         {productosFiltrados.map((producto) => (
@@ -555,7 +651,7 @@ export default function Home() {
             <div
               style={{
                 width: "100%",
-                height: 250,
+                height: 140,
                 background: "#fff",
                 overflow: "hidden",
                 position: "relative",
@@ -591,7 +687,7 @@ export default function Home() {
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
-                  padding: 14,
+                  padding: 6,
                   transition: "0.35s ease",
                 }}
               />
@@ -606,7 +702,7 @@ export default function Home() {
             >
               <h2
                 style={{
-                  fontSize: 28,
+                  fontSize: 20,
                   fontWeight: "800",
                   marginBottom: 12,
                   lineHeight: 1.1,
@@ -615,15 +711,15 @@ export default function Home() {
                 {producto.nombre}
               </h2>
 
-    <p
-  style={{
-    opacity: 0.8,
-    fontSize: 17,
-    fontWeight: "600",
-  }}
->
-  {producto.kilos} {producto.presentacion}
-</p>
+              <p
+                style={{
+                  opacity: 0.8,
+                  fontSize: 17,
+                  fontWeight: "600",
+                }}
+              >
+                {producto.kilos} {producto.presentacion}
+              </p>
 
               {/* PRECIO */}
 
@@ -634,7 +730,7 @@ export default function Home() {
               >
                 <p
                   style={{
-                    fontSize: 42,
+                    fontSize: 30,
                     fontWeight: "900",
                     color: "#16a34a",
                     lineHeight: 1,
@@ -699,37 +795,35 @@ export default function Home() {
       {/* BOTON WHATSAPP GLOBAL */}
 
       <a
-  href="https://wa.me/5493496550978"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    position: "fixed",
-    bottom: 25,
-    right: 25,
-    width: 70,
-    height: 70,
-    borderRadius: "50%",
-    background:
-      "linear-gradient(135deg,#25D366,#128C7E)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textDecoration: "none",
-    boxShadow:
-      "0 10px 25px rgba(0,0,0,0.35)",
-    zIndex: 999,
-  }}
->
-  <img
-    src="/whatsapp.png"
-    alt="WhatsApp"
-    style={{
-      width: 40,
-      height: 40,
-      objectFit: "contain",
-    }}
-  />
-</a>
+        href="https://wa.me/5493496550978"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: "fixed",
+          bottom: 18,
+          right: 18,
+          width: 58,
+          height: 58,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg,#25D366,#128C7E)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textDecoration: "none",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
+          zIndex: 999,
+        }}
+      >
+        <img
+          src="/whatsapp.png"
+          alt="WhatsApp"
+          style={{
+            width: 32,
+            height: 32,
+            objectFit: "contain",
+          }}
+        />
+      </a>
     </div>
   );
 }
@@ -762,16 +856,36 @@ function botonHeader(darkMode: boolean): CSSProperties {
   };
 }
 
-function menuStyle(color: string, active: boolean): CSSProperties {
+function menuStyle(
+  color: string,
+  active: boolean
+): React.CSSProperties {
   return {
-    background: active ? color : "rgba(255,255,255,0.12)",
-    color: "white",
-    border: "none",
+    background: active
+      ? color
+      : `${color}22`,
+
+    color: active
+      ? "white"
+      : color,
+
+    border: `2px solid ${color}`,
+
     borderRadius: 20,
+
     padding: 18,
+
     fontSize: 16,
+
     fontWeight: "bold",
+
     cursor: "pointer",
+
+    transition: "0.25s ease",
+
+    boxShadow: active
+      ? `0 10px 25px ${color}55`
+      : "0 5px 15px rgba(0,0,0,0.08)",
   };
 }
 
@@ -784,6 +898,20 @@ function botonCard(color: string): CSSProperties {
     border: "none",
     borderRadius: 14,
     marginTop: 12,
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: 15,
+  };
+}
+
+function botonCompartir(color: string): CSSProperties {
+  return {
+    width: "100%",
+    padding: 14,
+    background: color,
+    color: "white",
+    border: "none",
+    borderRadius: 14,
     cursor: "pointer",
     fontWeight: "bold",
     fontSize: 15,
