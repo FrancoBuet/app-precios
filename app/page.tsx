@@ -66,14 +66,14 @@ export default function Home() {
     window.location.href = "/login";
   }
 
-  async function obtenerProductos() {
-    const { data } = await supabase
-      .from("productos")
-      .select("*")
-      .order("id", { ascending: false });
+ async function obtenerProductos() {
+  const { data } = await supabase
+    .from("productos")
+    .select("*")
+    .order("nombre", { ascending: true });
 
-    setProductos(data || []);
-  }
+  setProductos(data || []);
+}
 
   function mostrarMensaje(texto: string) {
     setMensaje(texto);
