@@ -335,7 +335,6 @@ export default function Home() {
     gridTemplateColumns:
   "repeat(auto-fit, minmax(170px, 1fr))",
 gap: 12,
-      gap: 12,
       marginBottom: 30,
     }}
   >
