@@ -66,14 +66,14 @@ export default function Home() {
     window.location.href = "/login";
   }
 
- async function obtenerProductos() {
-  const { data } = await supabase
-    .from("productos")
-    .select("*")
-    .order("nombre", { ascending: true });
+  async function obtenerProductos() {
+    const { data } = await supabase
+      .from("productos")
+      .select("*")
+      .order("nombre", { ascending: true });
 
-  setProductos(data || []);
-}
+    setProductos(data || []);
+  }
 
   function mostrarMensaje(texto: string) {
     setMensaje(texto);
@@ -122,7 +122,7 @@ export default function Home() {
     const precioFinal =
       !editandoId && esSoloMayorista
         ? Math.round(Number(precio) * 1.3)
-        : Number(precio);
+        : Math.round(Number(precio));
 
     const productoData = {
       nombre: nombre.trim().toUpperCase(),
@@ -218,6 +218,24 @@ export default function Home() {
     });
   }
 
+  function formatearPrecio(valor: number) {
+    return Math.round(Number(valor)).toLocaleString("es-AR");
+  }
+
+  function formatearCantidad(cantidad: number, presentacion: string) {
+    const pres = (presentacion || "").toUpperCase().trim();
+
+    if (pres === "UNIDAD") {
+      return `${cantidad} ${cantidad === 1 ? "UNIDAD" : "UNIDADES"}`;
+    }
+
+    if (pres === "KG") {
+      return `${cantidad} KG`;
+    }
+
+    return `${cantidad} ${pres}`;
+  }
+
   let productosFiltrados = productos.filter((producto) =>
     producto.nombre?.toLowerCase().includes(busqueda.toLowerCase())
   );
@@ -244,7 +262,7 @@ export default function Home() {
     <div
       style={{
         padding: 15,
-        paddingBottom: 110,
+        paddingBottom: 100,
         background: darkMode
           ? "linear-gradient(180deg, #020617 0%, #111827 100%)"
           : "linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%)",
@@ -260,8 +278,8 @@ export default function Home() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 24,
-          gap: 15,
+          marginBottom: 22,
+          gap: 14,
         }}
       >
         <div
@@ -276,8 +294,8 @@ export default function Home() {
             src="/logo.png"
             alt="logo"
             style={{
-              width: 70,
-              height: 70,
+              width: 68,
+              height: 68,
               borderRadius: 20,
               objectFit: "cover",
               boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
@@ -287,7 +305,7 @@ export default function Home() {
           <div>
             <h1
               style={{
-                fontSize: "clamp(26px, 6vw, 42px)",
+                fontSize: "clamp(25px, 6vw, 42px)",
                 fontWeight: "900",
                 marginBottom: 2,
                 lineHeight: 1,
@@ -335,16 +353,14 @@ export default function Home() {
         </div>
       </div>
 
-      {/* MENSAJE */}
-
       {mensaje && (
         <div
           style={{
             background: "linear-gradient(135deg,#10b981,#34d399)",
             color: "white",
-            padding: 14,
-            borderRadius: 18,
-            marginBottom: 20,
+            padding: 13,
+            borderRadius: 16,
+            marginBottom: 18,
             fontWeight: "bold",
           }}
         >
@@ -360,7 +376,7 @@ export default function Home() {
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 10,
-            marginBottom: 22,
+            marginBottom: 18,
           }}
         >
           <div>
@@ -484,8 +500,8 @@ export default function Home() {
       {listaCompartida && (
         <div
           style={{
-            marginBottom: 20,
-            padding: 16,
+            marginBottom: 16,
+            padding: 15,
             borderRadius: 18,
             background:
               listaCompartida === "ofertas"
@@ -518,7 +534,7 @@ export default function Home() {
               : "rgba(255,255,255,0.7)",
             borderRadius: 24,
             padding: 16,
-            marginBottom: 22,
+            marginBottom: 20,
           }}
         >
           <h2
@@ -572,9 +588,7 @@ export default function Home() {
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   setImagen(e.target.files[0]);
-
                   const imageUrl = URL.createObjectURL(e.target.files[0]);
-
                   setPreview(imageUrl);
                 }
               }}
@@ -633,7 +647,7 @@ export default function Home() {
               alt="preview"
               style={{
                 width: "100%",
-                maxHeight: 240,
+                maxHeight: 220,
                 objectFit: "cover",
                 marginTop: 16,
                 borderRadius: 18,
@@ -668,20 +682,34 @@ export default function Home() {
 
       {/* BUSCADOR */}
 
-      <input
-        placeholder="🔍 Buscar productos..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
+      <div
         style={{
-          width: "100%",
-          padding: 13,
-          borderRadius: 16,
-          border: "none",
-          marginBottom: 16,
-          fontSize: 15,
-          outline: "none",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          paddingTop: 4,
+          paddingBottom: 10,
+          background: darkMode
+            ? "linear-gradient(180deg, #020617 0%, rgba(2,6,23,0.85) 100%)"
+            : "linear-gradient(180deg, #f8fafc 0%, rgba(248,250,252,0.85) 100%)",
+          backdropFilter: "blur(10px)",
         }}
-      />
+      >
+        <input
+          placeholder="🔍 Buscar productos..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          style={{
+            width: "100%",
+            padding: 12,
+            borderRadius: 15,
+            border: "none",
+            fontSize: 15,
+            outline: "none",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+          }}
+        />
+      </div>
 
       {/* PRODUCTOS */}
 
@@ -689,7 +717,8 @@ export default function Home() {
         style={{
           display: "grid",
           gridTemplateColumns: "1fr",
-          gap: 10,
+          gap: 8,
+          marginTop: 8,
         }}
       >
         {productosFiltrados.map((producto) => (
@@ -697,16 +726,16 @@ export default function Home() {
             key={producto.id}
             style={{
               display: "flex",
-              gap: 12,
+              gap: 10,
               alignItems: "center",
               background: darkMode
                 ? "rgba(17,24,39,0.72)"
                 : "rgba(255,255,255,0.9)",
-              borderRadius: 20,
-              padding: 12,
+              borderRadius: 18,
+              padding: 10,
               boxShadow: darkMode
-                ? "0 10px 30px rgba(0,0,0,0.35)"
-                : "0 10px 25px rgba(0,0,0,0.08)",
+                ? "0 8px 24px rgba(0,0,0,0.35)"
+                : "0 8px 22px rgba(0,0,0,0.08)",
               border: darkMode
                 ? "1px solid rgba(255,255,255,0.06)"
                 : "1px solid rgba(255,255,255,0.7)",
@@ -715,16 +744,15 @@ export default function Home() {
             {producto.imagen && (
               <div
                 style={{
-                  width: 82,
-                  height: 82,
-                  minWidth: 82,
+                  width: 68,
+                  height: 68,
+                  minWidth: 68,
                   background: "#fff",
-                  borderRadius: 16,
+                  borderRadius: 15,
                   overflow: "hidden",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  position: "relative",
                 }}
               >
                 <img
@@ -734,13 +762,13 @@ export default function Home() {
                     width: "100%",
                     height: "100%",
                     objectFit: "contain",
-                    padding: 5,
+                    padding: 4,
                   }}
                 />
               </div>
             )}
 
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
                   display: "flex",
@@ -751,11 +779,12 @@ export default function Home() {
               >
                 <h2
                   style={{
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: "900",
                     lineHeight: 1.1,
                     textTransform: "uppercase",
                     margin: 0,
+                    wordBreak: "break-word",
                   }}
                 >
                   {producto.nombre}
@@ -767,32 +796,32 @@ export default function Home() {
               <p
                 style={{
                   opacity: 0.8,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: "700",
-                  marginTop: 6,
+                  marginTop: 5,
                   marginBottom: 0,
                 }}
               >
-                {producto.kilos} {producto.presentacion}
+                {formatearCantidad(producto.kilos, producto.presentacion)}
               </p>
 
               <p
                 style={{
-                  fontSize: 26,
+                  fontSize: 23,
                   fontWeight: "900",
                   color: "#16a34a",
-                  marginTop: 8,
+                  marginTop: 6,
                   marginBottom: 0,
                   lineHeight: 1,
                 }}
               >
-                ${Number(producto.precio).toLocaleString("es-AR")}
+                ${formatearPrecio(producto.precio)}
               </p>
 
               <span
                 style={{
                   opacity: 0.55,
-                  fontSize: 12,
+                  fontSize: 11,
                 }}
               >
                 precio final
@@ -802,8 +831,8 @@ export default function Home() {
                 style={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: 6,
-                  marginTop: 8,
+                  gap: 5,
+                  marginTop: 7,
                 }}
               >
                 {producto.mostrar_publico && (
@@ -823,17 +852,17 @@ export default function Home() {
                 <div
                   style={{
                     display: "flex",
-                    gap: 8,
-                    marginTop: 10,
+                    gap: 7,
+                    marginTop: 8,
                   }}
                 >
                   <button
                     onClick={() => editarProducto(producto)}
                     style={{
                       ...botonCard("#f59e0b"),
-                      padding: 10,
+                      padding: 9,
                       marginTop: 0,
-                      fontSize: 13,
+                      fontSize: 12,
                     }}
                   >
                     ✏️ Editar
@@ -843,9 +872,9 @@ export default function Home() {
                     onClick={() => eliminarProducto(producto.id)}
                     style={{
                       ...botonCard("#dc2626"),
-                      padding: 10,
+                      padding: 9,
                       marginTop: 0,
-                      fontSize: 13,
+                      fontSize: 12,
                     }}
                   >
                     🗑️ Eliminar
@@ -867,8 +896,8 @@ export default function Home() {
           position: "fixed",
           bottom: 18,
           right: 18,
-          width: 54,
-          height: 54,
+          width: 52,
+          height: 52,
           borderRadius: "50%",
           background: "linear-gradient(135deg,#25D366,#128C7E)",
           display: "flex",
@@ -883,8 +912,8 @@ export default function Home() {
           src="/whatsapp.png"
           alt="WhatsApp"
           style={{
-            width: 30,
-            height: 30,
+            width: 29,
+            height: 29,
             objectFit: "contain",
           }}
         />
@@ -927,7 +956,7 @@ function menuStyle(color: string, active: boolean): CSSProperties {
     color: active ? "white" : color,
     border: `2px solid ${color}`,
     borderRadius: 20,
-    padding: 16,
+    padding: 15,
     fontSize: 16,
     fontWeight: "bold",
     cursor: "pointer",
@@ -956,14 +985,14 @@ function botonCard(color: string): CSSProperties {
 function botonCompartir(color: string): CSSProperties {
   return {
     width: "100%",
-    padding: 12,
+    padding: 11,
     background: color,
     color: "white",
     border: "none",
     borderRadius: 14,
     cursor: "pointer",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 13,
   };
 }
 
@@ -980,7 +1009,7 @@ const checkboxStyle: CSSProperties = {
 const badgeOferta: CSSProperties = {
   background: "linear-gradient(135deg,#dc2626,#ef4444)",
   color: "white",
-  padding: "5px 9px",
+  padding: "5px 8px",
   borderRadius: 999,
   fontWeight: "bold",
   fontSize: 12,
@@ -990,26 +1019,26 @@ const badgeOferta: CSSProperties = {
 const badgeMayorista: CSSProperties = {
   background: "linear-gradient(135deg,#2563eb,#3b82f6)",
   color: "white",
-  padding: "5px 9px",
+  padding: "4px 8px",
   borderRadius: 999,
   fontWeight: "bold",
-  fontSize: 11,
+  fontSize: 10,
 };
 
 const badgePublico: CSSProperties = {
   background: "linear-gradient(135deg,#16a34a,#22c55e)",
   color: "white",
-  padding: "5px 9px",
+  padding: "4px 8px",
   borderRadius: 999,
   fontWeight: "bold",
-  fontSize: 11,
+  fontSize: 10,
 };
 
 const badgeElaborados: CSSProperties = {
   background: "linear-gradient(135deg,#7c3aed,#a855f7)",
   color: "white",
-  padding: "5px 9px",
+  padding: "4px 8px",
   borderRadius: 999,
   fontWeight: "bold",
-  fontSize: 11,
+  fontSize: 10,
 };
