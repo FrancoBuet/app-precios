@@ -17,6 +17,7 @@ export default function Home() {
   const [oferta, setOferta] = useState(false);
   const [mostrarMayorista, setMostrarMayorista] = useState(true);
   const [mostrarPublico, setMostrarPublico] = useState(true);
+  const [mostrarElaborados, setMostrarElaborados] = useState(false);
 
   const [imagen, setImagen] = useState<File | null>(null);
 
@@ -39,14 +40,15 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const lista = params.get("lista");
 
-  if (
-  lista === "publico" ||
-  lista === "mayorista" ||
-  lista === "ofertas"
-) {
-  setSeccion(lista);
-  setListaCompartida(lista);
-}
+    if (
+      lista === "publico" ||
+      lista === "mayorista" ||
+      lista === "ofertas" ||
+      lista === "elaborados"
+    ) {
+      setSeccion(lista);
+      setListaCompartida(lista);
+    }
 
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
@@ -111,13 +113,25 @@ export default function Home() {
       imagenUrl = data.publicUrl;
     }
 
+    const esSoloMayorista =
+      mostrarMayorista &&
+      !mostrarPublico &&
+      !oferta &&
+      !mostrarElaborados;
+
+    const precioFinal =
+      !editandoId && esSoloMayorista
+        ? Math.round(Number(precio) * 1.3)
+        : Number(precio);
+
     const productoData = {
-      nombre,
-      presentacion,
+      nombre: nombre.trim().toUpperCase(),
+      presentacion: presentacion.trim().toUpperCase(),
       kilos: Number(kilos),
-      precio: Number(precio),
+      precio: precioFinal,
       mostrar_mayorista: mostrarMayorista,
       mostrar_publico: mostrarPublico,
+      mostrar_elaborados: mostrarElaborados,
       oferta,
       imagen: imagenUrl,
     };
@@ -137,9 +151,7 @@ export default function Home() {
       mostrarMensaje("Producto actualizado correctamente");
       setEditandoId(null);
     } else {
-      const { error } = await supabase
-        .from("productos")
-        .insert([productoData]);
+      const { error } = await supabase.from("productos").insert([productoData]);
 
       if (error) {
         alert(error.message);
@@ -147,7 +159,11 @@ export default function Home() {
         return;
       }
 
-      mostrarMensaje("Producto agregado correctamente");
+      mostrarMensaje(
+        esSoloMayorista
+          ? "Producto agregado con 30% mayorista"
+          : "Producto agregado correctamente"
+      );
     }
 
     limpiarFormulario();
@@ -163,6 +179,7 @@ export default function Home() {
     setOferta(false);
     setMostrarMayorista(true);
     setMostrarPublico(true);
+    setMostrarElaborados(false);
     setImagen(null);
     setPreview("");
   }
@@ -187,9 +204,12 @@ export default function Home() {
     setOferta(producto.oferta || false);
     setMostrarMayorista(producto.mostrar_mayorista ?? true);
     setMostrarPublico(producto.mostrar_publico ?? true);
+    setMostrarElaborados(producto.mostrar_elaborados ?? false);
 
     if (producto.imagen) {
       setPreview(producto.imagen);
+    } else {
+      setPreview("");
     }
 
     window.scrollTo({
@@ -214,11 +234,17 @@ export default function Home() {
     productosFiltrados = productosFiltrados.filter((p) => p.mostrar_publico);
   }
 
+  if (seccion === "elaborados") {
+    productosFiltrados = productosFiltrados.filter(
+      (p) => p.mostrar_elaborados
+    );
+  }
+
   return (
     <div
       style={{
         padding: 15,
-        paddingBottom: 120,
+        paddingBottom: 110,
         background: darkMode
           ? "linear-gradient(180deg, #020617 0%, #111827 100%)"
           : "linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%)",
@@ -234,7 +260,7 @@ export default function Home() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 30,
+          marginBottom: 24,
           gap: 15,
         }}
       >
@@ -250,8 +276,8 @@ export default function Home() {
             src="/logo.png"
             alt="logo"
             style={{
-              width: 75,
-              height: 75,
+              width: 70,
+              height: 70,
               borderRadius: 20,
               objectFit: "cover",
               boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
@@ -261,7 +287,7 @@ export default function Home() {
           <div>
             <h1
               style={{
-                fontSize: "clamp(28px, 6vw, 42px)",
+                fontSize: "clamp(26px, 6vw, 42px)",
                 fontWeight: "900",
                 marginBottom: 2,
                 lineHeight: 1,
@@ -273,7 +299,7 @@ export default function Home() {
             <p
               style={{
                 opacity: 0.7,
-                fontSize: 16,
+                fontSize: 15,
               }}
             >
               Esperanza - Santa Fe
@@ -316,9 +342,9 @@ export default function Home() {
           style={{
             background: "linear-gradient(135deg,#10b981,#34d399)",
             color: "white",
-            padding: 16,
+            padding: 14,
             borderRadius: 18,
-            marginBottom: 25,
+            marginBottom: 20,
             fontWeight: "bold",
           }}
         >
@@ -326,148 +352,179 @@ export default function Home() {
         </div>
       )}
 
-     {/* MENU + COMPARTIR */}
+      {/* MENU + COMPARTIR */}
 
-{!listaCompartida && (
-  <div
-    style={{
-      display: "grid",
-    gridTemplateColumns:
-  "repeat(auto-fit, minmax(170px, 1fr))",
-gap: 12,
-      marginBottom: 30,
-    }}
-  >
-    <div>
-      <button
-        onClick={() => setSeccion("ofertas")}
-        style={{
-          ...menuStyle("#dc2626", seccion === "ofertas"),
-          width: "100%",
-        }}
-      >
-        🔥 Ofertas
-      </button>
-
-      {user && (
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `${window.location.origin}/?lista=ofertas`
-            );
-            mostrarMensaje("Link ofertas copiado");
-          }}
+      {!listaCompartida && (
+        <div
           style={{
-            ...botonCompartir("#dc2626"),
-            marginTop: 10,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 10,
+            marginBottom: 22,
           }}
         >
-          📤 Compartir Ofertas
-        </button>
+          <div>
+            <button
+              onClick={() => setSeccion("ofertas")}
+              style={{
+                ...menuStyle("#dc2626", seccion === "ofertas"),
+                width: "100%",
+              }}
+            >
+              🔥 Ofertas
+            </button>
+
+            {user && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/?lista=ofertas`
+                  );
+                  mostrarMensaje("Link ofertas copiado");
+                }}
+                style={{
+                  ...botonCompartir("#dc2626"),
+                  marginTop: 8,
+                }}
+              >
+                📤 Compartir
+              </button>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={() => setSeccion("mayorista")}
+              style={{
+                ...menuStyle("#2563eb", seccion === "mayorista"),
+                width: "100%",
+              }}
+            >
+              📦 Mayorista
+            </button>
+
+            {user && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/?lista=mayorista`
+                  );
+                  mostrarMensaje("Link mayorista copiado");
+                }}
+                style={{
+                  ...botonCompartir("#2563eb"),
+                  marginTop: 8,
+                }}
+              >
+                📤 Compartir
+              </button>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={() => setSeccion("publico")}
+              style={{
+                ...menuStyle("#16a34a", seccion === "publico"),
+                width: "100%",
+              }}
+            >
+              🛒 Público
+            </button>
+
+            {user && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/?lista=publico`
+                  );
+                  mostrarMensaje("Link público copiado");
+                }}
+                style={{
+                  ...botonCompartir("#16a34a"),
+                  marginTop: 8,
+                }}
+              >
+                📤 Compartir
+              </button>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={() => setSeccion("elaborados")}
+              style={{
+                ...menuStyle("#7c3aed", seccion === "elaborados"),
+                width: "100%",
+              }}
+            >
+              🥗 Elaborados
+            </button>
+
+            {user && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/?lista=elaborados`
+                  );
+                  mostrarMensaje("Link elaborados copiado");
+                }}
+                style={{
+                  ...botonCompartir("#7c3aed"),
+                  marginTop: 8,
+                }}
+              >
+                📤 Compartir
+              </button>
+            )}
+          </div>
+        </div>
       )}
-    </div>
 
-    <div>
-      <button
-        onClick={() => setSeccion("mayorista")}
-        style={{
-          ...menuStyle("#2563eb", seccion === "mayorista"),
-          width: "100%",
-        }}
-      >
-        📦 Mayorista
-      </button>
-
-      {user && (
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `${window.location.origin}/?lista=mayorista`
-            );
-            mostrarMensaje("Link mayorista copiado");
-          }}
+      {listaCompartida && (
+        <div
           style={{
-            ...botonCompartir("#2563eb"),
-            marginTop: 10,
+            marginBottom: 20,
+            padding: 16,
+            borderRadius: 18,
+            background:
+              listaCompartida === "ofertas"
+                ? "#dc2626"
+                : listaCompartida === "mayorista"
+                ? "#2563eb"
+                : listaCompartida === "elaborados"
+                ? "#7c3aed"
+                : "#16a34a",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: 18,
+            textAlign: "center",
           }}
         >
-          📤 Compartir Mayorista
-        </button>
+          {listaCompartida === "ofertas" && "🔥 Lista de Ofertas"}
+          {listaCompartida === "mayorista" && "📦 Lista Mayorista"}
+          {listaCompartida === "publico" && "🛒 Lista Público"}
+          {listaCompartida === "elaborados" && "🥗 Lista Elaborados"}
+        </div>
       )}
-    </div>
-
-    <div>
-      <button
-        onClick={() => setSeccion("publico")}
-        style={{
-          ...menuStyle("#16a34a", seccion === "publico"),
-          width: "100%",
-        }}
-      >
-        🛒 Público
-      </button>
-
-      {user && (
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `${window.location.origin}/?lista=publico`
-            );
-            mostrarMensaje("Link público copiado");
-          }}
-          style={{
-            ...botonCompartir("#16a34a"),
-            marginTop: 10,
-          }}
-        >
-          📤 Compartir Público
-        </button>
-      )}
-    </div>
-  </div>
-)}
-
-{listaCompartida && (
-  <div
-    style={{
-      marginBottom: 30,
-      padding: 18,
-      borderRadius: 20,
-      background:
-        listaCompartida === "ofertas"
-          ? "#dc2626"
-          : listaCompartida === "mayorista"
-          ? "#2563eb"
-          : "#16a34a",
-      color: "white",
-      fontWeight: "bold",
-      fontSize: 18,
-      textAlign: "center",
-    }}
-  >
-    {listaCompartida === "ofertas" && "🔥 Lista de Ofertas"}
-    {listaCompartida === "mayorista" && "📦 Lista Mayorista"}
-    {listaCompartida === "publico" && "🛒 Lista Público"}
-  </div>
-)}
 
       {/* FORMULARIO */}
 
-      {user && (
+      {user && !listaCompartida && (
         <div
           style={{
             background: darkMode
               ? "rgba(17,24,39,0.65)"
               : "rgba(255,255,255,0.7)",
-            borderRadius: 30,
-            padding: 20,
-            marginBottom: 35,
+            borderRadius: 24,
+            padding: 16,
+            marginBottom: 22,
           }}
         >
           <h2
             style={{
-              marginBottom: 20,
-              fontSize: 24,
+              marginBottom: 16,
+              fontSize: 22,
             }}
           >
             {editandoId ? "✏️ Editar Producto" : "➕ Agregar Producto"}
@@ -476,8 +533,8 @@ gap: 12,
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 15,
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+              gap: 12,
             }}
           >
             <input
@@ -527,10 +584,10 @@ gap: 12,
 
           <div
             style={{
-              marginTop: 20,
+              marginTop: 16,
               display: "flex",
               flexWrap: "wrap",
-              gap: 12,
+              gap: 10,
             }}
           >
             <label style={checkboxStyle}>
@@ -559,6 +616,15 @@ gap: 12,
               />
               🛒 Público
             </label>
+
+            <label style={checkboxStyle}>
+              <input
+                type="checkbox"
+                checked={mostrarElaborados}
+                onChange={(e) => setMostrarElaborados(e.target.checked)}
+              />
+              🥗 Elaborados
+            </label>
           </div>
 
           {preview && (
@@ -567,10 +633,10 @@ gap: 12,
               alt="preview"
               style={{
                 width: "100%",
-                maxHeight: 300,
+                maxHeight: 240,
                 objectFit: "cover",
-                marginTop: 20,
-                borderRadius: 20,
+                marginTop: 16,
+                borderRadius: 18,
               }}
             />
           )}
@@ -579,15 +645,15 @@ gap: 12,
             onClick={agregarProducto}
             disabled={loading}
             style={{
-              marginTop: 25,
+              marginTop: 18,
               width: "100%",
-              padding: 18,
+              padding: 16,
               background: "linear-gradient(135deg,#16a34a,#22c55e)",
               color: "white",
               border: "none",
-              borderRadius: 18,
+              borderRadius: 16,
               fontWeight: "bold",
-              fontSize: 17,
+              fontSize: 16,
               cursor: "pointer",
             }}
           >
@@ -608,11 +674,11 @@ gap: 12,
         onChange={(e) => setBusqueda(e.target.value)}
         style={{
           width: "100%",
-          padding: 16,
-          borderRadius: 18,
+          padding: 13,
+          borderRadius: 16,
           border: "none",
-          marginBottom: 30,
-          fontSize: 16,
+          marginBottom: 16,
+          fontSize: 15,
           outline: "none",
         }}
       />
@@ -622,169 +688,169 @@ gap: 12,
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: 12,
+          gridTemplateColumns: "1fr",
+          gap: 10,
         }}
       >
         {productosFiltrados.map((producto) => (
           <div
             key={producto.id}
             style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
               background: darkMode
                 ? "rgba(17,24,39,0.72)"
-                : "rgba(255,255,255,0.88)",
-              borderRadius: 32,
-              overflow: "hidden",
+                : "rgba(255,255,255,0.9)",
+              borderRadius: 20,
+              padding: 12,
               boxShadow: darkMode
-                ? "0 15px 40px rgba(0,0,0,0.35)"
-                : "0 15px 40px rgba(0,0,0,0.10)",
-              transition: "0.3s ease",
-              backdropFilter: "blur(14px)",
+                ? "0 10px 30px rgba(0,0,0,0.35)"
+                : "0 10px 25px rgba(0,0,0,0.08)",
               border: darkMode
                 ? "1px solid rgba(255,255,255,0.06)"
                 : "1px solid rgba(255,255,255,0.7)",
             }}
           >
-            {/* IMAGEN */}
-
-            <div
-              style={{
-                width: "100%",
-                height: 140,
-                background: "#fff",
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              {producto.oferta && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 14,
-                    right: 14,
-                    zIndex: 10,
-                    background: "linear-gradient(135deg,#ef4444,#dc2626)",
-                    color: "white",
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    fontWeight: "bold",
-                    fontSize: 13,
-                    boxShadow: "0 6px 18px rgba(239,68,68,0.35)",
-                  }}
-                >
-                  🔥 OFERTA
-                </div>
-              )}
-
-              <img
-                src={
-                  producto.imagen ||
-                  "https://via.placeholder.com/400x300?text=Producto"
-                }
-                alt={producto.nombre}
+            {producto.imagen && (
+              <div
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  padding: 6,
-                  transition: "0.35s ease",
-                }}
-              />
-            </div>
-
-            {/* INFO */}
-
-            <div
-              style={{
-                padding: 22,
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: "800",
-                  marginBottom: 12,
-                  lineHeight: 1.1,
+                  width: 82,
+                  height: 82,
+                  minWidth: 82,
+                  background: "#fff",
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
                 }}
               >
-                {producto.nombre}
-              </h2>
+                <img
+                  src={producto.imagen}
+                  alt={producto.nombre}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    padding: 5,
+                  }}
+                />
+              </div>
+            )}
+
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  alignItems: "flex-start",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "900",
+                    lineHeight: 1.1,
+                    textTransform: "uppercase",
+                    margin: 0,
+                  }}
+                >
+                  {producto.nombre}
+                </h2>
+
+                {producto.oferta && <span style={badgeOferta}>🔥</span>}
+              </div>
 
               <p
                 style={{
                   opacity: 0.8,
-                  fontSize: 17,
-                  fontWeight: "600",
+                  fontSize: 14,
+                  fontWeight: "700",
+                  marginTop: 6,
+                  marginBottom: 0,
                 }}
               >
                 {producto.kilos} {producto.presentacion}
               </p>
 
-              {/* PRECIO */}
-
-              <div
+              <p
                 style={{
-                  marginTop: 20,
+                  fontSize: 26,
+                  fontWeight: "900",
+                  color: "#16a34a",
+                  marginTop: 8,
+                  marginBottom: 0,
+                  lineHeight: 1,
                 }}
               >
-                <p
-                  style={{
-                    fontSize: 30,
-                    fontWeight: "900",
-                    color: "#16a34a",
-                    lineHeight: 1,
-                  }}
-                >
-                  ${Number(producto.precio).toLocaleString("es-AR")}
-                </p>
+                ${Number(producto.precio).toLocaleString("es-AR")}
+              </p>
 
-                <span
-                  style={{
-                    opacity: 0.6,
-                    fontSize: 14,
-                  }}
-                >
-                  precio final
-                </span>
-              </div>
-
-              {/* BADGES */}
+              <span
+                style={{
+                  opacity: 0.55,
+                  fontSize: 12,
+                }}
+              >
+                precio final
+              </span>
 
               <div
                 style={{
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 18,
+                  gap: 6,
+                  marginTop: 8,
                 }}
               >
                 {producto.mostrar_publico && (
-                  <div style={badgePublico}>🛒 Público</div>
+                  <div style={badgePublico}>Público</div>
                 )}
 
                 {producto.mostrar_mayorista && (
-                  <div style={badgeMayorista}>📦 Mayorista</div>
+                  <div style={badgeMayorista}>Mayorista</div>
+                )}
+
+                {producto.mostrar_elaborados && (
+                  <div style={badgeElaborados}>Elaborados</div>
                 )}
               </div>
 
-              {/* ADMIN */}
-
-              {user && (
-                <>
+              {user && !listaCompartida && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginTop: 10,
+                  }}
+                >
                   <button
                     onClick={() => editarProducto(producto)}
-                    style={botonCard("#f59e0b")}
+                    style={{
+                      ...botonCard("#f59e0b"),
+                      padding: 10,
+                      marginTop: 0,
+                      fontSize: 13,
+                    }}
                   >
                     ✏️ Editar
                   </button>
 
                   <button
                     onClick={() => eliminarProducto(producto.id)}
-                    style={botonCard("#dc2626")}
+                    style={{
+                      ...botonCard("#dc2626"),
+                      padding: 10,
+                      marginTop: 0,
+                      fontSize: 13,
+                    }}
                   >
                     🗑️ Eliminar
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -801,8 +867,8 @@ gap: 12,
           position: "fixed",
           bottom: 18,
           right: 18,
-          width: 58,
-          height: 58,
+          width: 54,
+          height: 54,
           borderRadius: "50%",
           background: "linear-gradient(135deg,#25D366,#128C7E)",
           display: "flex",
@@ -817,8 +883,8 @@ gap: 12,
           src="/whatsapp.png"
           alt="WhatsApp"
           style={{
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             objectFit: "contain",
           }}
         />
@@ -830,8 +896,8 @@ gap: 12,
 function inputStyle(darkMode: boolean): CSSProperties {
   return {
     width: "100%",
-    padding: "14px 16px",
-    borderRadius: 16,
+    padding: "13px 14px",
+    borderRadius: 14,
     border: "none",
     background: darkMode ? "#374151" : "#ffffff",
     color: darkMode ? "white" : "#111827",
@@ -855,33 +921,17 @@ function botonHeader(darkMode: boolean): CSSProperties {
   };
 }
 
-function menuStyle(
-  color: string,
-  active: boolean
-): React.CSSProperties {
+function menuStyle(color: string, active: boolean): CSSProperties {
   return {
-    background: active
-      ? color
-      : `${color}22`,
-
-    color: active
-      ? "white"
-      : color,
-
+    background: active ? color : `${color}22`,
+    color: active ? "white" : color,
     border: `2px solid ${color}`,
-
     borderRadius: 20,
-
-    padding: 18,
-
+    padding: 16,
     fontSize: 16,
-
     fontWeight: "bold",
-
     cursor: "pointer",
-
     transition: "0.25s ease",
-
     boxShadow: active
       ? `0 10px 25px ${color}55`
       : "0 5px 15px rgba(0,0,0,0.08)",
@@ -906,14 +956,14 @@ function botonCard(color: string): CSSProperties {
 function botonCompartir(color: string): CSSProperties {
   return {
     width: "100%",
-    padding: 14,
+    padding: 12,
     background: color,
     color: "white",
     border: "none",
     borderRadius: 14,
     cursor: "pointer",
     fontWeight: "bold",
-    fontSize: 15,
+    fontSize: 14,
   };
 }
 
@@ -930,26 +980,36 @@ const checkboxStyle: CSSProperties = {
 const badgeOferta: CSSProperties = {
   background: "linear-gradient(135deg,#dc2626,#ef4444)",
   color: "white",
-  padding: "6px 12px",
+  padding: "5px 9px",
   borderRadius: 999,
   fontWeight: "bold",
   fontSize: 12,
+  whiteSpace: "nowrap",
 };
 
 const badgeMayorista: CSSProperties = {
   background: "linear-gradient(135deg,#2563eb,#3b82f6)",
   color: "white",
-  padding: "6px 12px",
+  padding: "5px 9px",
   borderRadius: 999,
   fontWeight: "bold",
-  fontSize: 12,
+  fontSize: 11,
 };
 
 const badgePublico: CSSProperties = {
   background: "linear-gradient(135deg,#16a34a,#22c55e)",
   color: "white",
-  padding: "6px 12px",
+  padding: "5px 9px",
   borderRadius: 999,
   fontWeight: "bold",
-  fontSize: 12,
+  fontSize: 11,
+};
+
+const badgeElaborados: CSSProperties = {
+  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+  color: "white",
+  padding: "5px 9px",
+  borderRadius: 999,
+  fontWeight: "bold",
+  fontSize: 11,
 };
