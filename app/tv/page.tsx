@@ -3,21 +3,25 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const PRODUCTOS_POR_PAGINA = 6;
+const PRODUCTOS_POR_PAGINA = 4;
 const SEGUNDOS_POR_PAGINA = 8000;
 
 export default function PantallaTVGrid() {
   const [productos, setProductos] = useState<any[]>([]);
   const [pagina, setPagina] = useState(0);
+  const [hora, setHora] = useState("");
 
   useEffect(() => {
     obtenerOfertas();
+    actualizarHora();
 
-    const intervaloDatos = setInterval(() => {
-      obtenerOfertas();
-    }, 60000);
+    const intervaloDatos = setInterval(obtenerOfertas, 60000);
+    const intervaloHora = setInterval(actualizarHora, 30000);
 
-    return () => clearInterval(intervaloDatos);
+    return () => {
+      clearInterval(intervaloDatos);
+      clearInterval(intervaloHora);
+    };
   }, []);
 
   useEffect(() => {
@@ -25,10 +29,7 @@ export default function PantallaTVGrid() {
 
     const intervaloPagina = setInterval(() => {
       setPagina((prev) => {
-        const totalPaginas = Math.ceil(
-          productos.length / PRODUCTOS_POR_PAGINA
-        );
-
+        const totalPaginas = Math.ceil(productos.length / PRODUCTOS_POR_PAGINA);
         return prev + 1 >= totalPaginas ? 0 : prev + 1;
       });
     }, SEGUNDOS_POR_PAGINA);
@@ -46,6 +47,17 @@ export default function PantallaTVGrid() {
     setProductos(data || []);
   }
 
+  function actualizarHora() {
+    const ahora = new Date();
+
+    setHora(
+      ahora.toLocaleTimeString("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  }
+
   function precio(valor: number) {
     return Math.round(Number(valor)).toLocaleString("es-AR");
   }
@@ -60,16 +72,9 @@ export default function PantallaTVGrid() {
     return `${kilos} ${pres}`;
   }
 
-  const totalPaginas = Math.ceil(
-    productos.length / PRODUCTOS_POR_PAGINA
-  );
-
+  const totalPaginas = Math.ceil(productos.length / PRODUCTOS_POR_PAGINA);
   const inicio = pagina * PRODUCTOS_POR_PAGINA;
-
-  const productosPagina = productos.slice(
-    inicio,
-    inicio + PRODUCTOS_POR_PAGINA
-  );
+  const productosPagina = productos.slice(inicio, inicio + PRODUCTOS_POR_PAGINA);
 
   return (
     <div style={pantalla}>
@@ -83,7 +88,10 @@ export default function PantallaTVGrid() {
           </div>
         </div>
 
-        <div style={badgePrincipal}>🔥 OFERTAS DEL DÍA</div>
+        <div style={derechaHeader}>
+          <div style={horaStyle}>🕒 {hora}</div>
+          <div style={badgePrincipal}>🔥 OFERTAS DEL DÍA</div>
+        </div>
       </div>
 
       {productos.length === 0 ? (
@@ -103,22 +111,18 @@ export default function PantallaTVGrid() {
                   ) : (
                     <div style={sinImagen}>🔥</div>
                   )}
-
-                  <div style={badgeOferta}>OFERTA</div>
                 </div>
 
                 <div style={info}>
+                  <div style={badgeOferta}>🔥 OFERTA</div>
+
                   <h2 style={nombre}>{producto.nombre}</h2>
 
                   <p style={cantidadStyle}>
                     {cantidad(producto.kilos, producto.presentacion)}
                   </p>
 
-                  <p style={precioStyle}>
-                    ${precio(producto.precio)}
-                  </p>
-
-                  <p style={pie}>precio final</p>
+                  <p style={precioStyle}>${precio(producto.precio)}</p>
                 </div>
               </div>
             ))}
@@ -132,8 +136,7 @@ export default function PantallaTVGrid() {
                   style={{
                     ...punto,
                     opacity: index === pagina ? 1 : 0.35,
-                    transform:
-                      index === pagina ? "scale(1.25)" : "scale(1)",
+                    transform: index === pagina ? "scale(1.25)" : "scale(1)",
                   }}
                 />
               ))}
@@ -164,7 +167,7 @@ const header: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 25,
-  marginBottom: 25,
+  marginBottom: 22,
 };
 
 const marca: React.CSSProperties = {
@@ -174,8 +177,8 @@ const marca: React.CSSProperties = {
 };
 
 const logo: React.CSSProperties = {
-  width: "clamp(70px, 7vw, 110px)",
-  height: "clamp(70px, 7vw, 110px)",
+  width: "clamp(70px, 7vw, 105px)",
+  height: "clamp(70px, 7vw, 105px)",
   borderRadius: 26,
   objectFit: "cover",
   background: "white",
@@ -195,6 +198,20 @@ const ubicacion: React.CSSProperties = {
   marginTop: 8,
 };
 
+const derechaHeader: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+};
+
+const horaStyle: React.CSSProperties = {
+  fontSize: "clamp(22px, 2.2vw, 38px)",
+  fontWeight: 900,
+  background: "rgba(255,255,255,0.08)",
+  padding: "14px 22px",
+  borderRadius: 22,
+};
+
 const badgePrincipal: React.CSSProperties = {
   background: "linear-gradient(135deg,#dc2626,#ef4444)",
   padding: "18px 32px",
@@ -207,24 +224,23 @@ const badgePrincipal: React.CSSProperties = {
 
 const grid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
+  gridTemplateColumns: "repeat(2, 1fr)",
   gridTemplateRows: "repeat(2, 1fr)",
-  gap: 22,
-  height: "calc(100vh - 230px)",
+  gap: 24,
+  height: "calc(100vh - 220px)",
 };
 
 const card: React.CSSProperties = {
-  background: "rgba(15,23,42,0.92)",
-  borderRadius: 32,
+  background: "rgba(15,23,42,0.94)",
+  borderRadius: 34,
   overflow: "hidden",
-  border: "2px solid rgba(255,255,255,0.08)",
+  border: "2px solid rgba(255,255,255,0.09)",
   boxShadow: "0 18px 45px rgba(0,0,0,0.35)",
   display: "grid",
-  gridTemplateRows: "45% 55%",
+  gridTemplateColumns: "35% 65%",
 };
 
 const imagenBox: React.CSSProperties = {
-  position: "relative",
   background: "white",
   display: "flex",
   alignItems: "center",
@@ -236,60 +252,54 @@ const imagen: React.CSSProperties = {
   width: "100%",
   height: "100%",
   objectFit: "contain",
-  padding: 14,
+  padding: 16,
 };
 
 const sinImagen: React.CSSProperties = {
-  fontSize: "clamp(42px, 5vw, 80px)",
-};
-
-const badgeOferta: React.CSSProperties = {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  background: "linear-gradient(135deg,#dc2626,#ef4444)",
-  color: "white",
-  padding: "7px 14px",
-  borderRadius: 999,
-  fontSize: "clamp(12px, 1.2vw, 18px)",
-  fontWeight: 900,
-  boxShadow: "0 8px 25px rgba(239,68,68,0.4)",
+  fontSize: "clamp(50px, 6vw, 90px)",
+  color: "#dc2626",
 };
 
 const info: React.CSSProperties = {
-  padding: "16px 22px",
+  padding: "24px 30px",
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
 };
 
+const badgeOferta: React.CSSProperties = {
+  background: "linear-gradient(135deg,#dc2626,#ef4444)",
+  color: "white",
+  padding: "8px 16px",
+  borderRadius: 999,
+  fontSize: "clamp(14px, 1.4vw, 22px)",
+  fontWeight: 900,
+  width: "fit-content",
+  marginBottom: 14,
+  boxShadow: "0 8px 25px rgba(239,68,68,0.35)",
+};
+
 const nombre: React.CSSProperties = {
-  fontSize: "clamp(22px, 2.4vw, 42px)",
+  fontSize: "clamp(34px, 4vw, 68px)",
   fontWeight: 900,
   textTransform: "uppercase",
-  lineHeight: 1.05,
-  margin: 0,
-};
-
-const cantidadStyle: React.CSSProperties = {
-  fontSize: "clamp(17px, 1.8vw, 30px)",
-  fontWeight: 800,
-  opacity: 0.9,
-  margin: "10px 0 7px",
-};
-
-const precioStyle: React.CSSProperties = {
-  fontSize: "clamp(32px, 3.6vw, 66px)",
-  fontWeight: 900,
-  color: "#22c55e",
   lineHeight: 1,
   margin: 0,
 };
 
-const pie: React.CSSProperties = {
-  fontSize: "clamp(13px, 1.2vw, 22px)",
-  opacity: 0.6,
-  marginTop: 5,
+const cantidadStyle: React.CSSProperties = {
+  fontSize: "clamp(24px, 2.5vw, 42px)",
+  fontWeight: 800,
+  opacity: 0.9,
+  margin: "18px 0 12px",
+};
+
+const precioStyle: React.CSSProperties = {
+  fontSize: "clamp(54px, 6vw, 110px)",
+  fontWeight: 900,
+  color: "#22c55e",
+  lineHeight: 1,
+  margin: 0,
 };
 
 const footer: React.CSSProperties = {
@@ -299,7 +309,8 @@ const footer: React.CSSProperties = {
   right: 28,
   textAlign: "center",
   fontSize: "clamp(16px, 1.8vw, 30px)",
-  opacity: 0.8,
+  opacity: 0.85,
+  fontWeight: 700,
 };
 
 const sinOfertas: React.CSSProperties = {
