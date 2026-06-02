@@ -119,10 +119,9 @@ export default function Home() {
       !oferta &&
       !mostrarElaborados;
 
-    const precioFinal =
-      esSoloMayorista
-        ? Math.round(Number(precio) * 1.3)
-        : Math.round(Number(precio));
+    const precioFinal = esSoloMayorista
+      ? Math.round(Number(precio) * 1.3)
+      : Math.round(Number(precio));
 
     const productoData = {
       nombre: nombre.trim().toUpperCase(),
@@ -234,6 +233,103 @@ export default function Home() {
     }
 
     return `${cantidad} ${pres}`;
+  }
+
+  function obtenerProductosParaPDF(tipo: string) {
+    let lista = [...productos];
+
+    if (tipo === "ofertas") {
+      lista = lista.filter((p) => p.oferta);
+    }
+
+    if (tipo === "mayorista") {
+      lista = lista.filter((p) => p.mostrar_mayorista);
+    }
+
+    if (tipo === "publico") {
+      lista = lista.filter((p) => p.mostrar_publico);
+    }
+
+    if (tipo === "elaborados") {
+      lista = lista.filter((p) => p.mostrar_elaborados);
+    }
+
+    return lista.sort((a, b) =>
+      String(a.nombre || "").localeCompare(String(b.nombre || ""))
+    );
+  }
+
+  async function generarPDF(tipo: string) {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+
+    const doc = new jsPDF();
+
+    const titulos: Record<string, string> = {
+      mayorista: "LISTA MAYORISTA",
+      publico: "LISTA PUBLICO",
+      ofertas: "LISTA DE OFERTAS",
+      elaborados: "LISTA ELABORADOS",
+    };
+
+    const lista = obtenerProductosParaPDF(tipo);
+
+    const fecha = new Date().toLocaleString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    doc.setFontSize(20);
+    doc.text("EL NONO COQUI", 14, 18);
+
+    doc.setFontSize(12);
+    doc.text("Esperanza - Santa Fe", 14, 26);
+    doc.text(titulos[tipo], 14, 36);
+    doc.text(`Actualizado: ${fecha}`, 14, 44);
+
+    const filas = lista.map((producto) => [
+      producto.nombre || "",
+      formatearCantidad(producto.kilos, producto.presentacion),
+      `$${formatearPrecio(producto.precio)}`,
+    ]);
+
+    autoTable(doc, {
+      head: [["Producto", "Cantidad", "Precio"]],
+      body: filas,
+      startY: 52,
+      styles: {
+        fontSize: 11,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor:
+          tipo === "ofertas"
+            ? [220, 38, 38]
+            : tipo === "mayorista"
+            ? [37, 99, 235]
+            : tipo === "elaborados"
+            ? [124, 58, 237]
+            : [22, 163, 74],
+        textColor: [255, 255, 255],
+      },
+      columnStyles: {
+        0: { cellWidth: 95 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 40, halign: "right" },
+      },
+    });
+
+    doc.setFontSize(10);
+    doc.text(
+      "Pedidos por WhatsApp: 3496 550978",
+      14,
+      doc.internal.pageSize.height - 12
+    );
+
+    doc.save(`${titulos[tipo].toLowerCase().replaceAll(" ", "-")}.pdf`);
   }
 
   let productosFiltrados = productos.filter((producto) =>
@@ -391,20 +487,32 @@ export default function Home() {
             </button>
 
             {user && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/?lista=ofertas`
-                  );
-                  mostrarMensaje("Link ofertas copiado");
-                }}
-                style={{
-                  ...botonCompartir("#dc2626"),
-                  marginTop: 8,
-                }}
-              >
-                📤 Compartir
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/?lista=ofertas`
+                    );
+                    mostrarMensaje("Link ofertas copiado");
+                  }}
+                  style={{
+                    ...botonCompartir("#dc2626"),
+                    marginTop: 8,
+                  }}
+                >
+                  📤 Compartir
+                </button>
+
+                <button
+                  onClick={() => generarPDF("ofertas")}
+                  style={{
+                    ...botonPDF("#991b1b"),
+                    marginTop: 8,
+                  }}
+                >
+                  📄 PDF
+                </button>
+              </>
             )}
           </div>
 
@@ -420,20 +528,32 @@ export default function Home() {
             </button>
 
             {user && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/?lista=mayorista`
-                  );
-                  mostrarMensaje("Link mayorista copiado");
-                }}
-                style={{
-                  ...botonCompartir("#2563eb"),
-                  marginTop: 8,
-                }}
-              >
-                📤 Compartir
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/?lista=mayorista`
+                    );
+                    mostrarMensaje("Link mayorista copiado");
+                  }}
+                  style={{
+                    ...botonCompartir("#2563eb"),
+                    marginTop: 8,
+                  }}
+                >
+                  📤 Compartir
+                </button>
+
+                <button
+                  onClick={() => generarPDF("mayorista")}
+                  style={{
+                    ...botonPDF("#1d4ed8"),
+                    marginTop: 8,
+                  }}
+                >
+                  📄 PDF
+                </button>
+              </>
             )}
           </div>
 
@@ -449,20 +569,32 @@ export default function Home() {
             </button>
 
             {user && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/?lista=publico`
-                  );
-                  mostrarMensaje("Link público copiado");
-                }}
-                style={{
-                  ...botonCompartir("#16a34a"),
-                  marginTop: 8,
-                }}
-              >
-                📤 Compartir
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/?lista=publico`
+                    );
+                    mostrarMensaje("Link público copiado");
+                  }}
+                  style={{
+                    ...botonCompartir("#16a34a"),
+                    marginTop: 8,
+                  }}
+                >
+                  📤 Compartir
+                </button>
+
+                <button
+                  onClick={() => generarPDF("publico")}
+                  style={{
+                    ...botonPDF("#15803d"),
+                    marginTop: 8,
+                  }}
+                >
+                  📄 PDF
+                </button>
+              </>
             )}
           </div>
 
@@ -478,20 +610,32 @@ export default function Home() {
             </button>
 
             {user && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/?lista=elaborados`
-                  );
-                  mostrarMensaje("Link elaborados copiado");
-                }}
-                style={{
-                  ...botonCompartir("#7c3aed"),
-                  marginTop: 8,
-                }}
-              >
-                📤 Compartir
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/?lista=elaborados`
+                    );
+                    mostrarMensaje("Link elaborados copiado");
+                  }}
+                  style={{
+                    ...botonCompartir("#7c3aed"),
+                    marginTop: 8,
+                  }}
+                >
+                  📤 Compartir
+                </button>
+
+                <button
+                  onClick={() => generarPDF("elaborados")}
+                  style={{
+                    ...botonPDF("#6d28d9"),
+                    marginTop: 8,
+                  }}
+                >
+                  📄 PDF
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -983,6 +1127,20 @@ function botonCard(color: string): CSSProperties {
 }
 
 function botonCompartir(color: string): CSSProperties {
+  return {
+    width: "100%",
+    padding: 11,
+    background: color,
+    color: "white",
+    border: "none",
+    borderRadius: 14,
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: 13,
+  };
+}
+
+function botonPDF(color: string): CSSProperties {
   return {
     width: "100%",
     padding: 11,
