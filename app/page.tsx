@@ -120,7 +120,7 @@ export default function Home() {
       !mostrarElaborados;
 
     const precioFinal =
-      !editandoId && esSoloMayorista
+      esSoloMayorista
         ? Math.round(Number(precio) * 1.3)
         : Math.round(Number(precio));
 
