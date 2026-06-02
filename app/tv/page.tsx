@@ -116,7 +116,9 @@ export default function PantallaTVGrid() {
                 <div style={info}>
                   <div style={badgeOferta}>🔥 OFERTA</div>
 
-                  <h2 style={nombre}>{producto.nombre}</h2>
+                  <h2 className="notranslate" translate="no" style={nombre}>
+                    {producto.nombre}
+                  </h2>
 
                   <p style={cantidadStyle}>
                     {cantidad(producto.kilos, producto.presentacion)}

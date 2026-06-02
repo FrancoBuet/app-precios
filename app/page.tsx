@@ -922,6 +922,8 @@ export default function Home() {
                 }}
               >
                 <h2
+                  className="notranslate"
+                  translate="no"
                   style={{
                     fontSize: 16,
                     fontWeight: "900",
