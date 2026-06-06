@@ -175,6 +175,7 @@
     }
 
     $("total").textContent = "$" + precio(total);
+    actualizarLinkWhatsApp();
   }
 
   function render() {
@@ -242,40 +243,54 @@
       .join("\n");
   }
 
-  function enviarPedido() {
+  function crearUrlWhatsApp() {
+    return `https://wa.me/${WHATSAPP_NEGOCIO}?text=${encodeURIComponent(armarMensaje())}`;
+  }
+
+  function actualizarLinkWhatsApp() {
+    const enviar = $("enviar");
+    if (!enviar) return;
+
+    if (Object.values(carrito).length === 0) {
+      enviar.setAttribute("href", "#");
+      return;
+    }
+
+    enviar.setAttribute("href", crearUrlWhatsApp());
+  }
+
+  function enviarPedido(event) {
     const items = Object.values(carrito);
     if (items.length === 0) {
+      event.preventDefault();
       mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
       return;
     }
     if (!$("nombre").value.trim()) {
+      event.preventDefault();
       mostrarMensaje("Falta tu nombre.", "aviso");
       return;
     }
     if (!$("telefono").value.trim()) {
+      event.preventDefault();
       mostrarMensaje("Falta tu telefono.", "aviso");
       return;
     }
     if (!$("direccion").value.trim()) {
+      event.preventDefault();
       mostrarMensaje("Falta la direccion de entrega.", "aviso");
       return;
     }
 
     const mensaje = armarMensaje();
-    const esMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const texto = encodeURIComponent(mensaje);
-    const url = esMobile
-      ? `https://wa.me/${WHATSAPP_NEGOCIO}?text=${texto}`
-      : `https://web.whatsapp.com/send?phone=${WHATSAPP_NEGOCIO}&text=${texto}`;
+    const url = crearUrlWhatsApp();
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(mensaje).catch(() => {});
     }
 
+    $("enviar").setAttribute("href", url);
     mostrarLinkWhatsApp(url);
-    window.setTimeout(() => {
-      window.location.href = url;
-    }, 100);
   }
 
   async function cargarSupabase() {
@@ -351,6 +366,9 @@
     $("buscar").addEventListener("input", (event) => {
       busqueda = event.target.value;
       renderProductos();
+    });
+    ["nombre", "telefono", "direccion", "notas"].forEach((id) => {
+      $(id).addEventListener("input", actualizarLinkWhatsApp);
     });
     $("enviar").addEventListener("click", enviarPedido);
 

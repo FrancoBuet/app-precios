@@ -385,9 +385,9 @@ export default function PedidoPage() {
           <textarea id="direccion" placeholder="Direccion de entrega" />
           <textarea id="notas" placeholder="Aclaraciones" />
 
-          <button id="enviar" type="button" className="enviar">
+          <a id="enviar" href="#" className="enviar" rel="noopener">
             Enviar pedido por WhatsApp
-          </button>
+          </a>
         </aside>
       </div>
 
@@ -650,6 +650,9 @@ const css = `
     font-weight: 900;
   }
   .enviar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     border: none;
     border-radius: 16px;
@@ -659,6 +662,7 @@ const css = `
     font-size: 16px;
     font-weight: 900;
     cursor: pointer;
+    text-decoration: none;
   }
   @media (max-width: 860px) {
     .layout-pedido {
