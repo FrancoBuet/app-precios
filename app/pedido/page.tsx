@@ -392,7 +392,7 @@ export default function PedidoPage() {
         </aside>
       </div>
 
-      <script dangerouslySetInnerHTML={{ __html: script }} />
+      <script src={pedidoScriptSrc} />
     </main>
   );
 }
