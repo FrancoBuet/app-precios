@@ -361,6 +361,9 @@ export default function PedidoPage() {
             <button type="button" data-lista="publico">
               Publico
             </button>
+            <button type="button" data-lista="mayorista">
+              Mayorista
+            </button>
             <button type="button" data-lista="ofertas">
               Ofertas
             </button>
@@ -480,7 +483,7 @@ const css = `
   }
   .filtros {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 10px;
   }
@@ -660,6 +663,7 @@ const css = `
       grid-template-columns: 1fr;
     }
     .filtros {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px;
     }
     .filtros button {

@@ -15,7 +15,7 @@
   let carrito = {};
   const listaInicial = new URLSearchParams(window.location.search).get("lista");
   let seccion =
-    listaInicial === "ofertas" || listaInicial === "elaborados"
+    listaInicial === "mayorista" || listaInicial === "ofertas" || listaInicial === "elaborados"
       ? listaInicial
       : "publico";
   let busqueda = "";
@@ -89,6 +89,7 @@
       .filter((p) => {
         if (seccion === "ofertas") return Boolean(p.oferta);
         if (seccion === "publico") return Boolean(p.mostrar_publico);
+        if (seccion === "mayorista") return Boolean(p.mostrar_mayorista);
         if (seccion === "elaborados") return Boolean(p.mostrar_elaborados);
         return true;
       });
