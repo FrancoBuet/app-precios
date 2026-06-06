@@ -288,24 +288,29 @@
           <style>
             @page { size: 80mm auto; margin: 0; }
             * { box-sizing: border-box; }
-            body {
-              width: 66mm;
+            html {
+              width: 80mm;
               margin: 0;
-              padding: 1mm 2mm 0 1mm;
+              padding: 0;
+            }
+            body {
+              width: 60mm;
+              margin: 0 auto;
+              padding: 0;
               color: #000;
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 11px;
+              font-size: 10.5px;
               line-height: 1.2;
             }
             h1, h2, p { margin: 0; }
-            h1 { text-align: center; font-size: 16px; font-weight: 900; }
+            h1 { text-align: center; font-size: 15px; font-weight: 900; }
             h2 { text-align: center; font-size: 12px; margin-top: 1px; }
             .fecha { text-align: center; margin-top: 3px; }
             .corte { border-top: 1px dashed #000; margin: 5px 0; }
             .linea {
               display: grid;
-              grid-template-columns: minmax(0, 1fr) 16mm;
-              gap: 2mm;
+              grid-template-columns: minmax(0, 1fr) 17mm;
+              gap: 1.5mm;
               align-items: start;
               margin: 3px 0;
             }
@@ -313,8 +318,8 @@
             .precio { white-space: nowrap; text-align: right; overflow: visible; }
             .total {
               display: grid;
-              grid-template-columns: minmax(0, 1fr) 20mm;
-              gap: 2mm;
+              grid-template-columns: minmax(0, 1fr) 19mm;
+              gap: 1.5mm;
               font-size: 15px;
               font-weight: 900;
             }

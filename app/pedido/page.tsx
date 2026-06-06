@@ -4,7 +4,7 @@ const WHATSAPP_NEGOCIO = "5493496550978";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const COSTO_ENVIO = 1500;
-const PEDIDO_SCRIPT_VERSION = "ticket-print-2";
+const PEDIDO_SCRIPT_VERSION = "ticket-print-3";
 
 export default function PedidoPage() {
   const pedidoScriptSrc = `/pedido.js?whatsapp=${WHATSAPP_NEGOCIO}&envio=${COSTO_ENVIO}&supabaseUrl=${encodeURIComponent(
