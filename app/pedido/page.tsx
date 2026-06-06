@@ -4,11 +4,12 @@ const WHATSAPP_NEGOCIO = "5493496550978";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const COSTO_ENVIO = 1500;
+const PEDIDO_SCRIPT_VERSION = "ticket-print-1";
 
 export default function PedidoPage() {
   const pedidoScriptSrc = `/pedido.js?whatsapp=${WHATSAPP_NEGOCIO}&envio=${COSTO_ENVIO}&supabaseUrl=${encodeURIComponent(
     SUPABASE_URL
-  )}&supabaseKey=${encodeURIComponent(SUPABASE_ANON_KEY)}`;
+  )}&supabaseKey=${encodeURIComponent(SUPABASE_ANON_KEY)}&v=${PEDIDO_SCRIPT_VERSION}`;
   const script = `
     const WHATSAPP_NEGOCIO = ${JSON.stringify(WHATSAPP_NEGOCIO)};
     const SUPABASE_URL = ${JSON.stringify(SUPABASE_URL)};
@@ -389,6 +390,9 @@ export default function PedidoPage() {
           <textarea id="direccion" placeholder="Direccion de entrega" />
           <textarea id="notas" placeholder="Aclaraciones" />
 
+          <button id="imprimir" type="button" className="imprimir" disabled>
+            Imprimir ticket
+          </button>
           <a id="enviar" href="#" className="enviar" rel="noopener">
             Enviar pedido por WhatsApp
           </a>
@@ -657,6 +661,22 @@ const css = `
     font-weight: 900;
     cursor: pointer;
     text-decoration: none;
+  }
+  .imprimir {
+    width: 100%;
+    border: 1px solid #111827;
+    border-radius: 16px;
+    min-height: 48px;
+    margin-bottom: 10px;
+    background: white;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .imprimir:disabled {
+    opacity: .45;
+    cursor: not-allowed;
   }
   @media (max-width: 860px) {
     .layout-pedido {

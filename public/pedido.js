@@ -28,6 +28,15 @@
     return money.format(Math.round(Number(valor || 0)));
   }
 
+  function escaparHtml(texto) {
+    return String(texto || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function unidad(producto) {
     const presentacion = String(producto.presentacion || "").toUpperCase().trim();
     if (presentacion === "UNIDAD") return "unidad";
@@ -177,6 +186,10 @@
     }
 
     $("total").textContent = "$" + precio(total);
+    const imprimir = $("imprimir");
+    if (imprimir) {
+      imprimir.disabled = items.length === 0;
+    }
     actualizarLinkWhatsApp();
   }
 
@@ -249,6 +262,120 @@
     return `https://wa.me/${WHATSAPP_NEGOCIO}?text=${encodeURIComponent(armarMensaje())}`;
   }
 
+  function armarHtmlTicket() {
+    const items = Object.values(carrito);
+    const subtotalProductos = items.reduce(
+      (sum, item) => sum + Number(item.producto.precio || 0) * item.cantidad,
+      0
+    );
+    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const nombre = $("nombre").value.trim();
+    const telefono = $("telefono").value.trim();
+    const direccion = $("direccion").value.trim();
+    const notas = $("notas").value.trim();
+    const fecha = new Date().toLocaleString("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+    return `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Pedido</title>
+          <style>
+            @page { size: 80mm auto; margin: 4mm; }
+            * { box-sizing: border-box; }
+            body {
+              width: 72mm;
+              margin: 0;
+              color: #000;
+              font-family: Arial, Helvetica, sans-serif;
+              font-size: 12px;
+              line-height: 1.25;
+            }
+            h1, h2, p { margin: 0; }
+            h1 { text-align: center; font-size: 18px; font-weight: 900; }
+            h2 { text-align: center; font-size: 13px; margin-top: 2px; }
+            .fecha { text-align: center; margin-top: 6px; }
+            .corte { border-top: 1px dashed #000; margin: 8px 0; }
+            .linea {
+              display: flex;
+              justify-content: space-between;
+              gap: 8px;
+              margin: 4px 0;
+            }
+            .producto { font-weight: 700; }
+            .precio { white-space: nowrap; text-align: right; }
+            .total {
+              display: flex;
+              justify-content: space-between;
+              font-size: 16px;
+              font-weight: 900;
+            }
+            .dato { margin: 3px 0; overflow-wrap: anywhere; }
+            .pie { text-align: center; margin-top: 10px; font-weight: 700; }
+          </style>
+        </head>
+        <body>
+          <h1>EL NONO COQUI</h1>
+          <h2>Pedido</h2>
+          <p class="fecha">${escaparHtml(fecha)}</p>
+          <div class="corte"></div>
+          ${items
+            .map(
+              (item) => `
+                <div class="linea">
+                  <span class="producto">${escaparHtml(
+                    `${textoCantidadPedido(item)} de ${item.producto.nombre}`
+                  )}</span>
+                  <span class="precio">$${precio(item.producto.precio * item.cantidad)}</span>
+                </div>
+              `
+            )
+            .join("")}
+          <div class="linea">
+            <span class="producto">Envio</span>
+            <span class="precio">$${precio(COSTO_ENVIO)}</span>
+          </div>
+          <div class="corte"></div>
+          <div class="total">
+            <span>Total</span>
+            <span>$${precio(total)}</span>
+          </div>
+          <div class="corte"></div>
+          <p class="dato"><strong>Nombre:</strong> ${escaparHtml(nombre)}</p>
+          <p class="dato"><strong>Telefono:</strong> ${escaparHtml(telefono)}</p>
+          <p class="dato"><strong>Direccion:</strong> ${escaparHtml(direccion)}</p>
+          ${notas ? `<p class="dato"><strong>Aclaraciones:</strong> ${escaparHtml(notas)}</p>` : ""}
+          <div class="corte"></div>
+          <p class="pie">Gracias por tu pedido</p>
+          <script>
+            window.addEventListener("load", () => {
+              window.print();
+            });
+          </script>
+        </body>
+      </html>`;
+  }
+
+  function imprimirTicket() {
+    if (Object.values(carrito).length === 0) {
+      mostrarMensaje("Agrega al menos un producto antes de imprimir.", "aviso");
+      return;
+    }
+
+    const ventana = window.open("", "_blank", "width=380,height=640");
+    if (!ventana) {
+      mostrarMensaje("El navegador bloqueo la ventana de impresion. Habilita ventanas emergentes.", "aviso");
+      return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(armarHtmlTicket());
+    ventana.document.close();
+  }
+
   function actualizarLinkWhatsApp() {
     const enviar = $("enviar");
     if (!enviar) return;
@@ -315,11 +442,16 @@
     document.addEventListener("click", (event) => {
       const target = event.target;
       const enviar = target.closest("#enviar");
+      const imprimir = target.closest("#imprimir");
       const lista = target.closest("[data-lista]");
       const sumar = target.closest("[data-sumar]");
       const restar = target.closest("[data-restar]");
       const quitar = target.closest("[data-quitar]");
 
+      if (imprimir) {
+        imprimirTicket();
+        return;
+      }
       if (enviar) {
         prepararEnvioWhatsApp(event);
         return;
