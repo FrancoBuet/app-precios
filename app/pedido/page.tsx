@@ -20,7 +20,11 @@ export default function PedidoPage() {
 
     let productos = PRODUCTOS_PRUEBA;
     let carrito = {};
-    let seccion = new URLSearchParams(window.location.search).get("lista") || "publico";
+    const listaInicial = new URLSearchParams(window.location.search).get("lista");
+    let seccion =
+      listaInicial === "ofertas" || listaInicial === "elaborados"
+        ? listaInicial
+        : "publico";
     let busqueda = "";
     let usandoPrueba = true;
 
@@ -58,6 +62,7 @@ export default function PedidoPage() {
     }
 
     function pasoCantidad(producto) {
+      if (producto.oferta) return 1;
       return String(producto.presentacion || "").toUpperCase().trim() === "KG" ? 0.5 : 1;
     }
 
@@ -79,7 +84,6 @@ export default function PedidoPage() {
         .filter((p) => String(p.nombre || "").toLowerCase().includes(busqueda.toLowerCase()))
         .filter((p) => {
           if (seccion === "ofertas") return Boolean(p.oferta);
-          if (seccion === "mayorista") return Boolean(p.mostrar_mayorista);
           if (seccion === "publico") return Boolean(p.mostrar_publico);
           if (seccion === "elaborados") return Boolean(p.mostrar_elaborados);
           return true;
@@ -110,6 +114,7 @@ export default function PedidoPage() {
             <div class="producto-info">
               <h2>\${producto.nombre}</h2>
               <p>\${producto.kilos || 1} \${producto.presentacion || ""} · $\${precio(producto.precio)}</p>
+              \${producto.oferta ? '<small class="nota-oferta">Se vende por oferta completa</small>' : ""}
             </div>
             <div class="cantidad">
               <button type="button" data-restar="\${producto.id}">-</button>
@@ -175,7 +180,10 @@ export default function PedidoPage() {
     }
 
     function setCantidad(producto, cantidad) {
-      const nueva = Math.max(0, Number(cantidad) || 0);
+      const cantidadNumerica = Math.max(0, Number(cantidad) || 0);
+      const nueva = producto.oferta
+        ? Math.floor(cantidadNumerica)
+        : cantidadNumerica;
 
       if (nueva === 0) {
         delete carrito[producto.id];
@@ -346,9 +354,6 @@ export default function PedidoPage() {
           <div className="filtros">
             <button type="button" data-lista="publico">
               Publico
-            </button>
-            <button type="button" data-lista="mayorista">
-              Mayorista
             </button>
             <button type="button" data-lista="ofertas">
               Ofertas
@@ -543,6 +548,13 @@ const css = `
     color: #4b5563;
     font-size: 13px;
     font-weight: 700;
+  }
+  .nota-oferta {
+    display: block;
+    margin-top: 5px;
+    color: #dc2626;
+    font-weight: 900;
+    font-size: 12px;
   }
   .cantidad {
     display: grid;
