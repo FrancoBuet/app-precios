@@ -253,44 +253,13 @@
 
     if (Object.values(carrito).length === 0) {
       enviar.setAttribute("href", "#");
+      enviar.textContent = "Agrega productos para enviar por WhatsApp";
       return;
     }
 
     enviar.setAttribute("href", crearUrlWhatsApp());
-  }
-
-  function enviarPedido(event) {
-    const items = Object.values(carrito);
-    if (items.length === 0) {
-      event.preventDefault();
-      mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
-      return;
-    }
-    if (!$("nombre").value.trim()) {
-      event.preventDefault();
-      mostrarMensaje("Falta tu nombre.", "aviso");
-      return;
-    }
-    if (!$("telefono").value.trim()) {
-      event.preventDefault();
-      mostrarMensaje("Falta tu telefono.", "aviso");
-      return;
-    }
-    if (!$("direccion").value.trim()) {
-      event.preventDefault();
-      mostrarMensaje("Falta la direccion de entrega.", "aviso");
-      return;
-    }
-
-    const mensaje = armarMensaje();
-    const url = crearUrlWhatsApp();
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(mensaje).catch(() => {});
-    }
-
-    $("enviar").setAttribute("href", url);
-    mostrarLinkWhatsApp(url);
+    enviar.textContent = "Enviar pedido por WhatsApp";
+    mostrarLinkWhatsApp(crearUrlWhatsApp());
   }
 
   async function cargarSupabase() {
@@ -370,7 +339,6 @@
     ["nombre", "telefono", "direccion", "notas"].forEach((id) => {
       $(id).addEventListener("input", actualizarLinkWhatsApp);
     });
-    $("enviar").addEventListener("click", enviarPedido);
 
     render();
     cargarSupabase();
