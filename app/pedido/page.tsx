@@ -75,7 +75,7 @@ export default function PedidoPage() {
     function mostrarMensaje(texto, tipo = "aviso") {
       const box = $("mensaje");
       box.textContent = texto;
-      box.className = tipo;
+      box.className = texto ? tipo : "";
       box.style.display = texto ? "block" : "none";
     }
 
@@ -218,7 +218,7 @@ export default function PedidoPage() {
       ].filter(Boolean).join("\\n");
     }
 
-    async function enviarPedido() {
+    function enviarPedido() {
       const items = Object.values(carrito);
       if (items.length === 0) {
         mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
@@ -238,16 +238,18 @@ export default function PedidoPage() {
       }
 
       const mensaje = armarMensaje();
-      const url = \`https://web.whatsapp.com/send?phone=\${WHATSAPP_NEGOCIO}&text=\${encodeURIComponent(mensaje)}\`;
+      const esMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const baseWhatsApp = esMobile
+        ? "https://api.whatsapp.com/send"
+        : "https://web.whatsapp.com/send";
+      const url = \`\${baseWhatsApp}?phone=\${WHATSAPP_NEGOCIO}&text=\${encodeURIComponent(mensaje)}\`;
 
-      try {
-        await navigator.clipboard.writeText(mensaje);
-        mostrarMensaje("Pedido copiado. Abriendo WhatsApp Web...", "ok");
-      } catch {
-        mostrarMensaje("Abriendo WhatsApp Web...", "ok");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(mensaje).catch(() => {});
       }
 
-      window.open(url, "_blank", "noopener");
+      mostrarMensaje("Abriendo WhatsApp con tu pedido...", "ok");
+      window.location.href = url;
     }
 
     async function cargarSupabase() {
@@ -472,7 +474,7 @@ const css = `
   }
   .filtros {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 10px;
   }
@@ -483,7 +485,9 @@ const css = `
     background: #e5e7eb;
     color: #374151;
     font-weight: 900;
+    font-size: 16px;
     cursor: pointer;
+    min-width: 0;
   }
   .filtros button.activo {
     background: #16a34a;
@@ -644,6 +648,20 @@ const css = `
   @media (max-width: 860px) {
     .layout-pedido {
       grid-template-columns: 1fr;
+    }
+    .filtros {
+      gap: 6px;
+    }
+    .filtros button {
+      padding: 11px 6px;
+      font-size: 14px;
+      border-radius: 12px;
+    }
+  }
+  @media (max-width: 380px) {
+    .filtros button {
+      font-size: 12px;
+      padding-inline: 4px;
     }
   }
 `;
