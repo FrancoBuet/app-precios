@@ -7,6 +7,9 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const COSTO_ENVIO = 1500;
 
 export default function PedidoPage() {
+  const pedidoScriptSrc = `/pedido.js?whatsapp=${WHATSAPP_NEGOCIO}&envio=${COSTO_ENVIO}&supabaseUrl=${encodeURIComponent(
+    SUPABASE_URL
+  )}&supabaseKey=${encodeURIComponent(SUPABASE_ANON_KEY)}`;
   const script = `
     const WHATSAPP_NEGOCIO = ${JSON.stringify(WHATSAPP_NEGOCIO)};
     const SUPABASE_URL = ${JSON.stringify(SUPABASE_URL)};
@@ -388,7 +391,7 @@ export default function PedidoPage() {
         </aside>
       </div>
 
-      <script dangerouslySetInnerHTML={{ __html: script }} />
+      <script src={pedidoScriptSrc} />
     </main>
   );
 }
