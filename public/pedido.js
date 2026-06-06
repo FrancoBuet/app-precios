@@ -83,8 +83,9 @@
   }
 
   function productosFiltrados() {
+    const termino = String(busqueda || "").trim().toLowerCase();
     return productos
-      .filter((p) => String(p.nombre || "").toLowerCase().includes(busqueda.toLowerCase()))
+      .filter((p) => String(p.nombre || "").toLowerCase().includes(termino))
       .filter((p) => {
         if (seccion === "ofertas") return Boolean(p.oferta);
         if (seccion === "publico") return Boolean(p.mostrar_publico);
@@ -323,7 +324,15 @@
     });
 
     document.addEventListener("input", (event) => {
-      const inputCantidad = event.target.closest("[data-cantidad]");
+      const target = event.target;
+
+      if (target?.id === "buscar") {
+        busqueda = target.value;
+        renderProductos();
+        return;
+      }
+
+      const inputCantidad = target.closest("[data-cantidad]");
       if (!inputCantidad) return;
 
       const producto = productos.find((p) => String(p.id) === String(inputCantidad.dataset.cantidad));
@@ -332,10 +341,6 @@
       setCantidad(producto, inputCantidad.value);
     });
 
-    $("buscar").addEventListener("input", (event) => {
-      busqueda = event.target.value;
-      renderProductos();
-    });
     ["nombre", "telefono", "direccion", "notas"].forEach((id) => {
       $(id).addEventListener("input", actualizarLinkWhatsApp);
     });
