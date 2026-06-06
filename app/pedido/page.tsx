@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 
 const WHATSAPP_NEGOCIO = "5493496550978";
@@ -352,9 +351,6 @@ export default function PedidoPage() {
           </p>
         </div>
 
-        <Link href="/" style={volver}>
-          Ver listas
-        </Link>
       </header>
 
       <div id="mensaje" style={{ display: "none" }} />
@@ -436,16 +432,6 @@ const subtitulo: CSSProperties = {
   margin: 0,
   color: "#4b5563",
   maxWidth: 620,
-};
-
-const volver: CSSProperties = {
-  color: "white",
-  background: "#111827",
-  textDecoration: "none",
-  padding: "13px 16px",
-  borderRadius: 14,
-  fontWeight: 800,
-  whiteSpace: "nowrap",
 };
 
 const css = `
