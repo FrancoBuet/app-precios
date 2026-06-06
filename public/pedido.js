@@ -263,6 +263,20 @@
     mostrarLinkWhatsApp(crearUrlWhatsApp());
   }
 
+  function prepararEnvioWhatsApp(event) {
+    const enviar = event.target.closest("#enviar");
+    if (!enviar) return;
+
+    if (Object.values(carrito).length === 0) {
+      event.preventDefault();
+      mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
+      return;
+    }
+
+    enviar.setAttribute("href", crearUrlWhatsApp());
+    enviar.textContent = "Enviar pedido por WhatsApp";
+  }
+
   async function cargarSupabase() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       render();
@@ -299,11 +313,16 @@
   function iniciarPedido() {
     document.addEventListener("click", (event) => {
       const target = event.target;
+      const enviar = target.closest("#enviar");
       const lista = target.closest("[data-lista]");
       const sumar = target.closest("[data-sumar]");
       const restar = target.closest("[data-restar]");
       const quitar = target.closest("[data-quitar]");
 
+      if (enviar) {
+        prepararEnvioWhatsApp(event);
+        return;
+      }
       if (lista) {
         seccion = lista.dataset.lista;
         render();
@@ -342,7 +361,10 @@
     });
 
     ["nombre", "telefono", "direccion", "notas"].forEach((id) => {
-      $(id).addEventListener("input", actualizarLinkWhatsApp);
+      const campo = $(id);
+      ["input", "change", "keyup", "blur"].forEach((evento) => {
+        campo.addEventListener(evento, actualizarLinkWhatsApp);
+      });
     });
 
     render();
