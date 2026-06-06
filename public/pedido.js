@@ -20,6 +20,7 @@
       : "publico";
   let busqueda = "";
   let usandoPrueba = true;
+  const modoAdmin = new URLSearchParams(window.location.search).get("admin") === "1";
 
   const money = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
   const $ = (id) => document.getElementById(id);
@@ -188,6 +189,7 @@
     $("total").textContent = "$" + precio(total);
     const imprimir = $("imprimir");
     if (imprimir) {
+      imprimir.hidden = !modoAdmin;
       imprimir.disabled = items.length === 0;
     }
     actualizarLinkWhatsApp();
@@ -284,37 +286,40 @@
           <meta charset="utf-8">
           <title>Pedido</title>
           <style>
-            @page { size: 80mm auto; margin: 4mm; }
+            @page { size: 80mm auto; margin: 0; }
             * { box-sizing: border-box; }
             body {
-              width: 72mm;
+              width: 66mm;
               margin: 0;
+              padding: 1mm 2mm 0 1mm;
               color: #000;
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 12px;
-              line-height: 1.25;
+              font-size: 11px;
+              line-height: 1.2;
             }
             h1, h2, p { margin: 0; }
-            h1 { text-align: center; font-size: 18px; font-weight: 900; }
-            h2 { text-align: center; font-size: 13px; margin-top: 2px; }
-            .fecha { text-align: center; margin-top: 6px; }
-            .corte { border-top: 1px dashed #000; margin: 8px 0; }
+            h1 { text-align: center; font-size: 16px; font-weight: 900; }
+            h2 { text-align: center; font-size: 12px; margin-top: 1px; }
+            .fecha { text-align: center; margin-top: 3px; }
+            .corte { border-top: 1px dashed #000; margin: 5px 0; }
             .linea {
-              display: flex;
-              justify-content: space-between;
-              gap: 8px;
-              margin: 4px 0;
+              display: grid;
+              grid-template-columns: minmax(0, 1fr) 16mm;
+              gap: 2mm;
+              align-items: start;
+              margin: 3px 0;
             }
-            .producto { font-weight: 700; }
-            .precio { white-space: nowrap; text-align: right; }
+            .producto { font-weight: 700; overflow-wrap: anywhere; }
+            .precio { white-space: nowrap; text-align: right; overflow: visible; }
             .total {
-              display: flex;
-              justify-content: space-between;
-              font-size: 16px;
+              display: grid;
+              grid-template-columns: minmax(0, 1fr) 20mm;
+              gap: 2mm;
+              font-size: 15px;
               font-weight: 900;
             }
             .dato { margin: 3px 0; overflow-wrap: anywhere; }
-            .pie { text-align: center; margin-top: 10px; font-weight: 700; }
+            .pie { text-align: center; margin-top: 6px; font-weight: 700; }
           </style>
         </head>
         <body>
@@ -474,6 +479,11 @@
         render();
       }
     });
+
+    const imprimir = $("imprimir");
+    if (imprimir) {
+      imprimir.hidden = !modoAdmin;
+    }
 
     document.addEventListener("input", (event) => {
       const target = event.target;
