@@ -1035,6 +1035,29 @@ export default function Home() {
       {/* BOTON WHATSAPP GLOBAL */}
 
       <a
+        href={`/pedido?lista=${seccion}`}
+        style={{
+          position: "fixed",
+          bottom: 18,
+          left: 18,
+          minHeight: 52,
+          borderRadius: 999,
+          background: "linear-gradient(135deg,#16a34a,#22c55e)",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textDecoration: "none",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+          zIndex: 999,
+          padding: "0 18px",
+          fontWeight: 900,
+        }}
+      >
+        Hacer pedido
+      </a>
+
+      <a
         href="https://wa.me/5493496550978"
         target="_blank"
         rel="noopener noreferrer"
