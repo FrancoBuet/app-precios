@@ -461,6 +461,18 @@ const css = `
     background: #dcfce7;
     color: #166534;
   }
+  .link-whatsapp {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #16a34a;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 900;
+  }
   .layout-pedido {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);

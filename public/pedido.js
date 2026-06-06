@@ -71,6 +71,17 @@
     box.style.display = texto ? "block" : "none";
   }
 
+  function mostrarLinkWhatsApp(url) {
+    const box = $("mensaje");
+    if (!box) return;
+    box.className = "ok";
+    box.style.display = "block";
+    box.innerHTML = `
+      <div>Si WhatsApp no se abre automaticamente, toca este boton:</div>
+      <a class="link-whatsapp" href="${url}" target="_self" rel="noopener">Abrir WhatsApp</a>
+    `;
+  }
+
   function productosFiltrados() {
     return productos
       .filter((p) => String(p.nombre || "").toLowerCase().includes(busqueda.toLowerCase()))
@@ -252,17 +263,19 @@
 
     const mensaje = armarMensaje();
     const esMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const baseWhatsApp = esMobile
-      ? "https://api.whatsapp.com/send"
-      : "https://web.whatsapp.com/send";
-    const url = `${baseWhatsApp}?phone=${WHATSAPP_NEGOCIO}&text=${encodeURIComponent(mensaje)}`;
+    const texto = encodeURIComponent(mensaje);
+    const url = esMobile
+      ? `https://wa.me/${WHATSAPP_NEGOCIO}?text=${texto}`
+      : `https://web.whatsapp.com/send?phone=${WHATSAPP_NEGOCIO}&text=${texto}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(mensaje).catch(() => {});
     }
 
-    mostrarMensaje("Abriendo WhatsApp con tu pedido...", "ok");
-    window.location.assign(url);
+    mostrarLinkWhatsApp(url);
+    window.setTimeout(() => {
+      window.location.href = url;
+    }, 100);
   }
 
   async function cargarSupabase() {
