@@ -21,6 +21,7 @@
   let busqueda = "";
   let usandoPrueba = true;
   const modoAdmin = new URLSearchParams(window.location.search).get("admin") === "1";
+  let guardandoPedido = false;
 
   const money = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
   const $ = (id) => document.getElementById(id);
@@ -227,37 +228,60 @@
   }
 
   function armarMensaje() {
-    const items = Object.values(carrito);
-    const subtotalProductos = items.reduce(
+    const datos = armarDatosPedido();
+
+    return [
+      "Hola, quiero hacer este pedido:",
+      "",
+      ...datos.items.map((item) => `- ${item.texto}: $${precio(item.total)}`),
+      `- Envio: $${precio(datos.envio)}`,
+      "",
+      `Total: $${precio(datos.total)}`,
+      "",
+      `Nombre: ${datos.cliente_nombre}`,
+      `Telefono: ${datos.cliente_telefono}`,
+      `Direccion: ${datos.direccion}`,
+      datos.notas ? `Aclaraciones: ${datos.notas}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function armarDatosPedido() {
+    const itemsCarrito = Object.values(carrito);
+    const subtotalProductos = itemsCarrito.reduce(
       (sum, item) => sum + Number(item.producto.precio || 0) * item.cantidad,
       0
     );
-    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const total = itemsCarrito.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
     const nombre = $("nombre").value.trim();
     const telefono = $("telefono").value.trim();
     const direccion = $("direccion").value.trim();
     const notas = $("notas").value.trim();
 
-    return [
-      "Hola, quiero hacer este pedido:",
-      "",
-      ...items.map(
-        (item) =>
-          `- ${textoCantidadPedido(item)} de ${item.producto.nombre}: $${precio(
-            item.producto.precio * item.cantidad
-          )}`
-      ),
-      `- Envio: $${precio(COSTO_ENVIO)}`,
-      "",
-      `Total: $${precio(total)}`,
-      "",
-      `Nombre: ${nombre}`,
-      `Telefono: ${telefono}`,
-      `Direccion: ${direccion}`,
-      notas ? `Aclaraciones: ${notas}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const items = itemsCarrito.map((item) => ({
+      producto_id: item.producto.id,
+      nombre: item.producto.nombre,
+      texto: `${textoCantidadPedido(item)} de ${item.producto.nombre}`,
+      cantidad: item.cantidad,
+      presentacion: item.producto.presentacion || "",
+      kilos: Number(item.producto.kilos || 1),
+      precio_unitario: Number(item.producto.precio || 0),
+      total: Number(item.producto.precio || 0) * item.cantidad,
+      oferta: Boolean(item.producto.oferta),
+    }));
+
+    return {
+      cliente_nombre: nombre,
+      cliente_telefono: telefono,
+      direccion,
+      notas,
+      items,
+      subtotal: subtotalProductos,
+      envio: items.length > 0 ? COSTO_ENVIO : 0,
+      total,
+      origen: "pedido-web",
+    };
   }
 
   function crearUrlWhatsApp() {
@@ -401,18 +425,54 @@
     mostrarLinkWhatsApp(crearUrlWhatsApp());
   }
 
-  function prepararEnvioWhatsApp(event) {
+  async function guardarPedidoSupabase() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || Object.values(carrito).length === 0) {
+      return null;
+    }
+
+    const datos = armarDatosPedido();
+    const mensaje = armarMensaje();
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/pedidos`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ ...datos, mensaje }),
+      });
+
+      if (!response.ok) throw new Error("No se pudo guardar el pedido");
+      return true;
+    } catch {
+      return null;
+    }
+  }
+
+  async function prepararEnvioWhatsApp(event) {
     const enviar = event.target.closest("#enviar");
     if (!enviar) return;
+    event.preventDefault();
 
     if (Object.values(carrito).length === 0) {
-      event.preventDefault();
       mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
       return;
     }
 
-    enviar.setAttribute("href", crearUrlWhatsApp());
+    if (guardandoPedido) return;
+    guardandoPedido = true;
+    enviar.textContent = "Preparando pedido...";
+
+    await guardarPedidoSupabase();
+
+    const url = crearUrlWhatsApp();
+    enviar.setAttribute("href", url);
     enviar.textContent = "Enviar pedido por WhatsApp";
+    guardandoPedido = false;
+    window.location.href = url;
   }
 
   async function cargarSupabase() {
