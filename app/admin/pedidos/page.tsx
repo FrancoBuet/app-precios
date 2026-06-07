@@ -141,7 +141,7 @@ export default function AdminPedidosPage() {
     const { data, error } = await supabase
       .from("pedidos")
       .select("*")
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(30);
 
     if (error) {
@@ -246,7 +246,7 @@ export default function AdminPedidosPage() {
           <div>
             <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
             <h1 className="m-0 text-3xl font-black">Pedidos recibidos</h1>
-            <p className="m-0 text-sm font-bold text-slate-600">Ordenados por orden de llegada</p>
+            <p className="m-0 text-sm font-bold text-slate-600">Pedidos nuevos arriba</p>
           </div>
 
           <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-black shadow">
