@@ -18,6 +18,7 @@ export default function Home() {
   const [mostrarMayorista, setMostrarMayorista] = useState(true);
   const [mostrarPublico, setMostrarPublico] = useState(true);
   const [mostrarElaborados, setMostrarElaborados] = useState(false);
+  const [precioMayoristaManual, setPrecioMayoristaManual] = useState(false);
 
   const [imagen, setImagen] = useState<File | null>(null);
 
@@ -29,6 +30,15 @@ export default function Home() {
 
   const [mensaje, setMensaje] = useState("");
   const [listaCompartida, setListaCompartida] = useState("");
+  const [mostrarOpcionesCompartir, setMostrarOpcionesCompartir] = useState(false);
+  const [mostrarOpcionesPDF, setMostrarOpcionesPDF] = useState(false);
+
+  const listasDisponibles = [
+    { tipo: "ofertas", nombre: "Ofertas", color: "#dc2626" },
+    { tipo: "mayorista", nombre: "Mayorista", color: "#2563eb" },
+    { tipo: "publico", nombre: "Publico", color: "#16a34a" },
+    { tipo: "elaborados", nombre: "Elaborados", color: "#7c3aed" },
+  ];
 
   useEffect(() => {
     const temaGuardado = localStorage.getItem("darkMode");
@@ -120,7 +130,7 @@ export default function Home() {
       !mostrarElaborados;
 
     const precioFinal = esSoloMayorista
-      ? Math.round(Number(precio) * 1.3)
+      ? Math.round(Number(precio) * (precioMayoristaManual ? 1 : 1.3))
       : Math.round(Number(precio));
 
     const productoData = {
@@ -160,7 +170,9 @@ export default function Home() {
 
       mostrarMensaje(
         esSoloMayorista
-          ? "Producto agregado con 30% mayorista"
+          ? precioMayoristaManual
+            ? "Producto mayorista agregado con precio manual"
+            : "Producto agregado con 30% mayorista"
           : "Producto agregado correctamente"
       );
     }
@@ -179,6 +191,7 @@ export default function Home() {
     setMostrarMayorista(true);
     setMostrarPublico(true);
     setMostrarElaborados(false);
+    setPrecioMayoristaManual(false);
     setImagen(null);
     setPreview("");
   }
@@ -204,6 +217,14 @@ export default function Home() {
     setMostrarMayorista(producto.mostrar_mayorista ?? true);
     setMostrarPublico(producto.mostrar_publico ?? true);
     setMostrarElaborados(producto.mostrar_elaborados ?? false);
+    setPrecioMayoristaManual(
+      Boolean(
+        producto.mostrar_mayorista &&
+          !producto.mostrar_publico &&
+          !producto.oferta &&
+          !producto.mostrar_elaborados
+      )
+    );
 
     if (producto.imagen) {
       setPreview(producto.imagen);
@@ -330,6 +351,13 @@ export default function Home() {
     );
 
     doc.save(`${titulos[tipo].toLowerCase().replaceAll(" ", "-")}.pdf`);
+  }
+
+  function compartirLista(tipo: string) {
+    const lista = listasDisponibles.find((item) => item.tipo === tipo);
+    navigator.clipboard.writeText(`${window.location.origin}/?lista=${tipo}`);
+    mostrarMensaje(`Link ${lista?.nombre || tipo} copiado`);
+    setMostrarOpcionesCompartir(false);
   }
 
   let productosFiltrados = productos.filter((producto) =>
@@ -467,6 +495,7 @@ export default function Home() {
       {/* MENU + COMPARTIR */}
 
       {!listaCompartida && (
+        <>
         <div
           style={{
             display: "grid",
@@ -486,7 +515,7 @@ export default function Home() {
               🔥 Ofertas
             </button>
 
-            {user && (
+            {false && user && (
               <>
                 <button
                   onClick={() => {
@@ -527,7 +556,7 @@ export default function Home() {
               📦 Mayorista
             </button>
 
-            {user && (
+            {false && user && (
               <>
                 <button
                   onClick={() => {
@@ -568,7 +597,7 @@ export default function Home() {
               🛒 Público
             </button>
 
-            {user && (
+            {false && user && (
               <>
                 <button
                   onClick={() => {
@@ -609,7 +638,7 @@ export default function Home() {
               🥗 Elaborados
             </button>
 
-            {user && (
+            {false && user && (
               <>
                 <button
                   onClick={() => {
@@ -639,6 +668,73 @@ export default function Home() {
             )}
           </div>
         </div>
+
+        {user && (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              marginBottom: 18,
+            }}
+          >
+            <div style={{ position: "relative", flex: "1 1 220px" }}>
+              <button
+                onClick={() => {
+                  setMostrarOpcionesCompartir(!mostrarOpcionesCompartir);
+                  setMostrarOpcionesPDF(false);
+                }}
+                style={botonAccionAdmin("#111827")}
+              >
+                Compartir lista
+              </button>
+
+              {mostrarOpcionesCompartir && (
+                <div style={menuAccionesAdmin(darkMode)}>
+                  {listasDisponibles.map((lista) => (
+                    <button
+                      key={lista.tipo}
+                      onClick={() => compartirLista(lista.tipo)}
+                      style={opcionAccionAdmin(lista.color)}
+                    >
+                      {lista.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ position: "relative", flex: "1 1 220px" }}>
+              <button
+                onClick={() => {
+                  setMostrarOpcionesPDF(!mostrarOpcionesPDF);
+                  setMostrarOpcionesCompartir(false);
+                }}
+                style={botonAccionAdmin("#334155")}
+              >
+                Generar PDF
+              </button>
+
+              {mostrarOpcionesPDF && (
+                <div style={menuAccionesAdmin(darkMode)}>
+                  {listasDisponibles.map((lista) => (
+                    <button
+                      key={lista.tipo}
+                      onClick={() => {
+                        generarPDF(lista.tipo);
+                        setMostrarOpcionesPDF(false);
+                      }}
+                      style={opcionAccionAdmin(lista.color)}
+                    >
+                      {lista.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {listaCompartida && (
@@ -784,6 +880,24 @@ export default function Home() {
               🥗 Elaborados
             </label>
           </div>
+
+          {mostrarMayorista && !mostrarPublico && !oferta && !mostrarElaborados && (
+            <label
+              style={{
+                ...checkboxStyle,
+                marginTop: 12,
+                background: darkMode ? "rgba(37,99,235,0.18)" : "#dbeafe",
+                color: darkMode ? "#bfdbfe" : "#1d4ed8",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={precioMayoristaManual}
+                onChange={(e) => setPrecioMayoristaManual(e.target.checked)}
+              />
+              Usar precio manual mayorista sin recargo del 30%
+            </label>
+          )}
 
           {preview && (
             <img
@@ -1176,6 +1290,52 @@ function botonPDF(color: string): CSSProperties {
     cursor: "pointer",
     fontWeight: "bold",
     fontSize: 13,
+  };
+}
+
+function botonAccionAdmin(color: string): CSSProperties {
+  return {
+    width: "100%",
+    padding: "13px 16px",
+    background: color,
+    color: "white",
+    border: "none",
+    borderRadius: 14,
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: 15,
+    boxShadow: "0 8px 20px rgba(15,23,42,0.12)",
+  };
+}
+
+function menuAccionesAdmin(darkMode: boolean): CSSProperties {
+  return {
+    position: "absolute",
+    zIndex: 200,
+    top: "calc(100% + 8px)",
+    left: 0,
+    right: 0,
+    display: "grid",
+    gap: 8,
+    padding: 10,
+    borderRadius: 16,
+    background: darkMode ? "#111827" : "white",
+    boxShadow: "0 16px 32px rgba(15,23,42,0.22)",
+    border: darkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e5e7eb",
+  };
+}
+
+function opcionAccionAdmin(color: string): CSSProperties {
+  return {
+    width: "100%",
+    padding: "12px 14px",
+    background: `${color}18`,
+    color,
+    border: `1px solid ${color}55`,
+    borderRadius: 12,
+    cursor: "pointer",
+    fontWeight: "bold",
+    textAlign: "left",
   };
 }
 
