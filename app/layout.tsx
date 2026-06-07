@@ -13,8 +13,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://app-precios-five.vercel.app"),
   title: "El Nono Coqui",
   description: "Lista de precios de El Nono Coqui",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "El Nono Coqui",
+    description: "Lista de precios de El Nono Coqui",
+    url: "/",
+    siteName: "El Nono Coqui",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "El Nono Coqui",
+      },
+    ],
+    locale: "es_AR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "El Nono Coqui",
+    description: "Lista de precios de El Nono Coqui",
+    images: ["/logo.png"],
+  },
   other: {
     google: "notranslate",
   },
