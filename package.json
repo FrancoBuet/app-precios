@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "print:pedidos": "node scripts/imprimir-pedidos.js",
+    "print:pedidos:once": "node scripts/imprimir-pedidos.js --once",
+    "print:pedidos:dry": "node scripts/imprimir-pedidos.js --dry-run --once"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
