@@ -8,6 +8,7 @@ const ROOT = path.join(__dirname, "..");
 const ENV_PATH = path.join(ROOT, ".env.local");
 const INTERVALO_MS = Number(process.env.PEDIDOS_PRINT_INTERVAL_MS || 5000);
 const PRINTER_NAME = process.env.PEDIDOS_PRINTER_NAME || "EPSON TM-T20II Receipt5";
+const COLUMNAS = Number(process.env.PEDIDOS_PRINT_COLUMNS || 42);
 const DRY_RUN = process.argv.includes("--dry-run");
 const ONCE = process.argv.includes("--once");
 
@@ -77,7 +78,7 @@ function cortarTexto(texto, ancho) {
 }
 
 function lineaProducto(texto, total) {
-  const anchoTotal = 40;
+  const anchoTotal = COLUMNAS;
   const anchoPrecio = 10;
   const anchoTexto = anchoTotal - anchoPrecio - 1;
   const precioTexto = `$${precio(total)}`.slice(0, anchoPrecio);
@@ -90,21 +91,21 @@ function lineaProducto(texto, total) {
 function armarTicket(pedido) {
   const items = Array.isArray(pedido.items) ? pedido.items : [];
   const lineas = [
-    "          EL NONO COQUI",
-    "              Pedido",
-    `        ${fechaArgentina(pedido.created_at)}`,
-    "-".repeat(40),
+    "EL NONO COQUI".padStart(Math.floor((COLUMNAS + "EL NONO COQUI".length) / 2), " "),
+    "Pedido".padStart(Math.floor((COLUMNAS + "Pedido".length) / 2), " "),
+    fechaArgentina(pedido.created_at).padStart(Math.floor((COLUMNAS + fechaArgentina(pedido.created_at).length) / 2), " "),
+    "-".repeat(COLUMNAS),
     ...items.map((item) => lineaProducto(item.texto || item.nombre || "", item.total)),
     lineaProducto("Envio", pedido.envio),
-    "-".repeat(40),
-    `Total${`$${precio(pedido.total)}`.padStart(35, " ")}`,
-    "-".repeat(40),
+    "-".repeat(COLUMNAS),
+    `Total${`$${precio(pedido.total)}`.padStart(COLUMNAS - 5, " ")}`,
+    "-".repeat(COLUMNAS),
     `Nombre: ${quitarAcentos(pedido.cliente_nombre || "")}`,
     `Telefono: ${quitarAcentos(pedido.cliente_telefono || "")}`,
-    ...cortarTexto(`Direccion: ${pedido.direccion || ""}`, 40),
-    ...(pedido.notas ? cortarTexto(`Aclaraciones: ${pedido.notas}`, 40) : []),
-    "-".repeat(40),
-    "       Gracias por tu pedido",
+    ...cortarTexto(`Direccion: ${pedido.direccion || ""}`, COLUMNAS),
+    ...(pedido.notas ? cortarTexto(`Aclaraciones: ${pedido.notas}`, COLUMNAS) : []),
+    "-".repeat(COLUMNAS),
+    "Gracias por tu pedido".padStart(Math.floor((COLUMNAS + "Gracias por tu pedido".length) / 2), " "),
     "",
     "",
     "",
@@ -113,23 +114,88 @@ function armarTicket(pedido) {
   return lineas.join(os.EOL);
 }
 
-function imprimirTexto(texto, pedidoId) {
-  const archivo = path.join(os.tmpdir(), `pedido-${pedidoId}.txt`);
-  fs.writeFileSync(archivo, texto, "utf8");
+function ascii(texto) {
+  return Buffer.from(quitarAcentos(texto).replace(/[^\x00-\x7F]/g, ""), "ascii");
+}
+
+function escposTexto(bufferes, texto = "") {
+  bufferes.push(ascii(`${texto}\n`));
+}
+
+function escposComando(bufferes, bytes) {
+  bufferes.push(Buffer.from(bytes));
+}
+
+function armarTicketEscpos(pedido) {
+  const items = Array.isArray(pedido.items) ? pedido.items : [];
+  const bufferes = [];
+
+  escposComando(bufferes, [0x1b, 0x40]);
+  escposComando(bufferes, [0x1b, 0x74, 0x02]);
+  escposComando(bufferes, [0x1b, 0x61, 0x01]);
+  escposComando(bufferes, [0x1b, 0x45, 0x01]);
+  escposTexto(bufferes, "EL NONO COQUI");
+  escposComando(bufferes, [0x1b, 0x45, 0x00]);
+  escposTexto(bufferes, "Pedido");
+  escposTexto(bufferes, fechaArgentina(pedido.created_at));
+  escposComando(bufferes, [0x1b, 0x61, 0x00]);
+  escposTexto(bufferes, "-".repeat(COLUMNAS));
+
+  for (const item of items) {
+    escposTexto(bufferes, lineaProducto(item.texto || item.nombre || "", item.total));
+  }
+
+  escposTexto(bufferes, lineaProducto("Envio", pedido.envio));
+  escposTexto(bufferes, "-".repeat(COLUMNAS));
+  escposComando(bufferes, [0x1b, 0x45, 0x01]);
+  escposTexto(bufferes, `Total${`$${precio(pedido.total)}`.padStart(COLUMNAS - 5, " ")}`);
+  escposComando(bufferes, [0x1b, 0x45, 0x00]);
+  escposTexto(bufferes, "-".repeat(COLUMNAS));
+  escposTexto(bufferes, `Nombre: ${pedido.cliente_nombre || ""}`);
+  escposTexto(bufferes, `Telefono: ${pedido.cliente_telefono || ""}`);
+  cortarTexto(`Direccion: ${pedido.direccion || ""}`, COLUMNAS).forEach((linea) => escposTexto(bufferes, linea));
+  if (pedido.notas) {
+    cortarTexto(`Aclaraciones: ${pedido.notas}`, COLUMNAS).forEach((linea) => escposTexto(bufferes, linea));
+  }
+  escposTexto(bufferes, "-".repeat(COLUMNAS));
+  escposComando(bufferes, [0x1b, 0x61, 0x01]);
+  escposTexto(bufferes, "Gracias por tu pedido");
+  escposTexto(bufferes, "");
+  escposTexto(bufferes, "");
+  escposTexto(bufferes, "");
+  escposComando(bufferes, [0x1d, 0x56, 0x42, 0x00]);
+
+  return Buffer.concat(bufferes);
+}
+
+function imprimirTicketRaw(pedido) {
+  const texto = armarTicket(pedido);
+  const bytes = armarTicketEscpos(pedido);
+  const archivo = path.join(os.tmpdir(), `pedido-${pedido.id}.bin`);
+  fs.writeFileSync(archivo, bytes);
 
   if (DRY_RUN) {
-    console.log(`\n--- TICKET ${pedidoId} ---\n${texto}`);
+    console.log(`\n--- TICKET ${pedido.id} ---\n${texto}`);
     return;
   }
 
-  const comando = `Get-Content -LiteralPath '${archivo.replace(/'/g, "''")}' | Out-Printer -Name '${PRINTER_NAME.replace(/'/g, "''")}'`;
-  const resultado = spawnSync("powershell.exe", ["-NoProfile", "-Command", comando], {
+  const resultado = spawnSync("powershell.exe", [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    path.join(__dirname, "raw-print.ps1"),
+    "-PrinterName",
+    PRINTER_NAME,
+    "-Path",
+    archivo,
+  ], {
     encoding: "utf8",
     windowsHide: true,
   });
 
   if (resultado.status !== 0) {
-    throw new Error(resultado.stderr || resultado.stdout || "Windows no pudo enviar el ticket a la impresora");
+    throw new Error(resultado.stderr || resultado.stdout || "Windows no pudo enviar el ticket RAW a la impresora");
   }
 }
 
@@ -163,7 +229,7 @@ async function ciclo() {
 
   for (const pedido of pedidos) {
     console.log(`Imprimiendo pedido ${pedido.id} - ${pedido.cliente_nombre || "sin nombre"}`);
-    imprimirTexto(armarTicket(pedido), pedido.id);
+    imprimirTicketRaw(pedido);
     await marcarImpreso(pedido.id);
     console.log(`Pedido ${pedido.id} marcado como impreso`);
   }
