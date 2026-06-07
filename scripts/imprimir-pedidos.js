@@ -90,9 +90,10 @@ function lineaProducto(texto, total) {
 
 function armarTicket(pedido) {
   const items = Array.isArray(pedido.items) ? pedido.items : [];
+  const tituloPedido = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
   const lineas = [
     "EL NONO COQUI".padStart(Math.floor((COLUMNAS + "EL NONO COQUI".length) / 2), " "),
-    "Pedido".padStart(Math.floor((COLUMNAS + "Pedido".length) / 2), " "),
+    tituloPedido.padStart(Math.floor((COLUMNAS + tituloPedido.length) / 2), " "),
     fechaArgentina(pedido.created_at).padStart(Math.floor((COLUMNAS + fechaArgentina(pedido.created_at).length) / 2), " "),
     "-".repeat(COLUMNAS),
     ...items.map((item) => lineaProducto(item.texto || item.nombre || "", item.total)),
@@ -128,6 +129,7 @@ function escposComando(bufferes, bytes) {
 
 function armarTicketEscpos(pedido) {
   const items = Array.isArray(pedido.items) ? pedido.items : [];
+  const tituloPedido = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
   const bufferes = [];
 
   escposComando(bufferes, [0x1b, 0x40]);
@@ -136,7 +138,7 @@ function armarTicketEscpos(pedido) {
   escposComando(bufferes, [0x1b, 0x45, 0x01]);
   escposTexto(bufferes, "EL NONO COQUI");
   escposComando(bufferes, [0x1b, 0x45, 0x00]);
-  escposTexto(bufferes, "Pedido");
+  escposTexto(bufferes, tituloPedido);
   escposTexto(bufferes, fechaArgentina(pedido.created_at));
   escposComando(bufferes, [0x1b, 0x61, 0x00]);
   escposTexto(bufferes, "-".repeat(COLUMNAS));

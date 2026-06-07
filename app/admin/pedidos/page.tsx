@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
 type ItemPedido = {
@@ -11,6 +11,7 @@ type ItemPedido = {
 
 type Pedido = {
   id: string;
+  numero: number | null;
   created_at: string;
   estado: string;
   cliente_nombre: string | null;
@@ -24,6 +25,7 @@ type Pedido = {
 };
 
 const money = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PEDIDOS_PIN || "2026";
 
 function precio(valor: number | null | undefined) {
   return money.format(Math.round(Number(valor || 0)));
@@ -89,7 +91,7 @@ function htmlTicket(pedido: Pedido) {
       </head>
       <body>
         <h1>EL NONO COQUI</h1>
-        <h2>Pedido</h2>
+        <h2>Pedido ${pedido.numero ? `#${escaparHtml(pedido.numero)}` : ""}</h2>
         <p class="fecha">${escaparHtml(fecha)}</p>
         <div class="corte"></div>
         ${(pedido.items || [])
@@ -130,6 +132,9 @@ export default function AdminPedidosPage() {
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [autoImprimir, setAutoImprimir] = useState(false);
+  const [autorizado, setAutorizado] = useState(false);
+  const [pin, setPin] = useState("");
+  const [errorPin, setErrorPin] = useState("");
   const impresosRef = useRef<Set<string>>(new Set());
 
   const cargarPedidos = useCallback(async () => {
@@ -171,10 +176,15 @@ export default function AdminPedidosPage() {
   }
 
   useEffect(() => {
+    setAutorizado(window.localStorage.getItem("admin-pedidos-ok") === "1");
+  }, []);
+
+  useEffect(() => {
+    if (!autorizado) return;
     cargarPedidos();
     const timer = window.setInterval(cargarPedidos, 6000);
     return () => window.clearInterval(timer);
-  }, [cargarPedidos]);
+  }, [autorizado, cargarPedidos]);
 
   useEffect(() => {
     if (!autoImprimir) return;
@@ -187,6 +197,47 @@ export default function AdminPedidosPage() {
       imprimirPedido(nuevo);
     }
   }, [autoImprimir, pedidos]);
+
+  function ingresarAdmin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pin.trim() !== ADMIN_PIN) {
+      setErrorPin("PIN incorrecto");
+      return;
+    }
+
+    window.localStorage.setItem("admin-pedidos-ok", "1");
+    setAutorizado(true);
+    setErrorPin("");
+  }
+
+  function salirAdmin() {
+    window.localStorage.removeItem("admin-pedidos-ok");
+    setAutorizado(false);
+    setPin("");
+  }
+
+  if (!autorizado) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4 text-slate-950">
+        <form onSubmit={ingresarAdmin} className="w-full max-w-sm rounded-2xl bg-white p-5 shadow">
+          <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
+          <h1 className="mb-4 mt-1 text-3xl font-black">Admin pedidos</h1>
+          <input
+            type="password"
+            value={pin}
+            onChange={(event) => setPin(event.target.value)}
+            placeholder="PIN admin"
+            className="mb-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-lg font-bold"
+            autoFocus
+          />
+          {errorPin ? <p className="mb-3 mt-0 font-bold text-red-700">{errorPin}</p> : null}
+          <button type="submit" className="w-full rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+            Entrar
+          </button>
+        </form>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-950">
@@ -205,6 +256,13 @@ export default function AdminPedidosPage() {
             />
             Imprimir nuevos automaticamente
           </label>
+          <button
+            type="button"
+            onClick={salirAdmin}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
+          >
+            Salir
+          </button>
         </div>
 
         {cargando ? (
@@ -221,7 +279,10 @@ export default function AdminPedidosPage() {
               <article key={pedido.id} className="rounded-2xl bg-white p-4 shadow">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
                   <div>
-                    <h2 className="m-0 text-xl font-black">{pedido.cliente_nombre || "Sin nombre"}</h2>
+                    <h2 className="m-0 text-xl font-black">
+                      {pedido.numero ? `Pedido #${pedido.numero} · ` : ""}
+                      {pedido.cliente_nombre || "Sin nombre"}
+                    </h2>
                     <p className="m-0 text-sm text-slate-600">
                       {new Date(pedido.created_at).toLocaleString("es-AR")} · {pedido.estado}
                     </p>
