@@ -155,11 +155,6 @@
             <div class="producto-info">
               <h2>${producto.nombre}</h2>
               <p>${producto.kilos || 1} ${producto.presentacion || ""} · $${precio(producto.precio)}</p>
-              ${
-                producto.oferta || seccion === "mayorista"
-                  ? '<small class="nota-oferta">Se vende por bulto completo</small>'
-                  : ""
-              }
             </div>
             <div class="cantidad">
               <button type="button" data-restar="${producto.id}">-</button>
