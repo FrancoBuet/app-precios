@@ -57,6 +57,12 @@
   }
 
   function textoCantidadPedido(item) {
+    if (item.lista === "mayorista") {
+      const cantidad = mostrarCantidad(item.cantidad);
+      const unidadBulto = unidadMayorista(item.producto, item.cantidad);
+      return `${cantidad} ${unidadBulto}`;
+    }
+
     const cantidad = cantidadPedido(item);
     const presentacion = String(item.producto.presentacion || "").toUpperCase().trim();
 
@@ -69,8 +75,25 @@
     return `${mostrarCantidad(cantidad)} ${unidad(item.producto)}`;
   }
 
+  function unidadMayorista(producto, cantidad) {
+    const nombre = String(producto.nombre || "").toUpperCase();
+    const plural = Number(cantidad) !== 1;
+
+    if (nombre.includes("BOLSA")) return plural ? "bolsas" : "bolsa";
+    if (nombre.includes("CAJON") || nombre.includes("CAJÓN")) return plural ? "cajones" : "cajon";
+    if (nombre.includes("DOCENA")) return plural ? "docenas" : "docena";
+    if (nombre.includes("MAPLE")) return plural ? "maples" : "maple";
+    if (nombre.includes("PAQ") || nombre.includes("PAQUETE")) return plural ? "paquetes" : "paquete";
+
+    return plural ? "bultos" : "bulto";
+  }
+
+  function esVentaEnteraMayorista(producto) {
+    return seccion === "mayorista" || producto.oferta;
+  }
+
   function pasoCantidad(producto) {
-    if (producto.oferta) return 1;
+    if (esVentaEnteraMayorista(producto)) return 1;
     return String(producto.presentacion || "").toUpperCase().trim() === "KG" ? 0.5 : 1;
   }
 
@@ -132,7 +155,11 @@
             <div class="producto-info">
               <h2>${producto.nombre}</h2>
               <p>${producto.kilos || 1} ${producto.presentacion || ""} · $${precio(producto.precio)}</p>
-              ${producto.oferta ? '<small class="nota-oferta">Se vende por oferta completa</small>' : ""}
+              ${
+                producto.oferta || seccion === "mayorista"
+                  ? '<small class="nota-oferta">Se vende por bulto completo</small>'
+                  : ""
+              }
             </div>
             <div class="cantidad">
               <button type="button" data-restar="${producto.id}">-</button>
@@ -216,12 +243,16 @@
 
   function setCantidad(producto, cantidad) {
     const cantidadNumerica = Math.max(0, Number(cantidad) || 0);
-    const nueva = producto.oferta ? Math.floor(cantidadNumerica) : cantidadNumerica;
+    const lista = seccion;
+    const nueva =
+      producto.oferta || lista === "mayorista"
+        ? Math.floor(cantidadNumerica)
+        : cantidadNumerica;
 
     if (nueva === 0) {
       delete carrito[producto.id];
     } else {
-      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)) };
+      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)), lista };
     }
 
     render();
