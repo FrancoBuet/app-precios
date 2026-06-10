@@ -174,12 +174,19 @@
       .join("");
   }
 
+  function totalItem(item) {
+    if (item.precioManual !== undefined && item.precioManual !== null && item.precioManual !== "") {
+      return Math.max(0, Number(item.precioManual) || 0);
+    }
+    return Number(item.producto.precio || 0) * item.cantidad;
+  }
+
   function renderResumen() {
     const items = Object.values(carrito);
     const resumen = $("resumen");
     if (!resumen) return;
     const subtotalProductos = items.reduce(
-      (sum, item) => sum + Number(item.producto.precio || 0) * item.cantidad,
+      (sum, item) => sum + totalItem(item),
       0
     );
     const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
@@ -194,7 +201,20 @@
           <div class="linea-pedido">
             <div>
               <strong>${textoCantidadPedido(item)} de ${item.producto.nombre}</strong>
-              <span>$${precio(item.producto.precio * item.cantidad)}</span>
+              <span data-precio-linea="${item.producto.id}">$${precio(totalItem(item))}</span>
+              ${modoAdmin ? `
+                <label class="precio-manual">
+                  Precio manual
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="${Math.round(totalItem(item))}"
+                    data-precio-manual="${item.producto.id}"
+                    aria-label="Precio manual de ${item.producto.nombre}"
+                  />
+                </label>
+              ` : ""}
             </div>
             <button type="button" data-quitar="${item.producto.id}">x</button>
           </div>
@@ -247,7 +267,8 @@
     if (nueva === 0) {
       delete carrito[producto.id];
     } else {
-      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)), lista };
+      const precioManual = carrito[producto.id]?.precioManual;
+      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)), lista, precioManual };
     }
 
     render();
@@ -276,7 +297,7 @@
   function armarDatosPedido() {
     const itemsCarrito = Object.values(carrito);
     const subtotalProductos = itemsCarrito.reduce(
-      (sum, item) => sum + Number(item.producto.precio || 0) * item.cantidad,
+      (sum, item) => sum + totalItem(item),
       0
     );
     const total = itemsCarrito.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
@@ -293,8 +314,9 @@
       presentacion: item.producto.presentacion || "",
       kilos: Number(item.producto.kilos || 1),
       precio_unitario: Number(item.producto.precio || 0),
-      total: Number(item.producto.precio || 0) * item.cantidad,
+      total: totalItem(item),
       oferta: Boolean(item.producto.oferta),
+      precio_manual: item.precioManual ?? null,
     }));
 
     return {
@@ -317,7 +339,7 @@
   function armarHtmlTicket() {
     const items = Object.values(carrito);
     const subtotalProductos = items.reduce(
-      (sum, item) => sum + Number(item.producto.precio || 0) * item.cantidad,
+      (sum, item) => sum + totalItem(item),
       0
     );
     const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
@@ -389,7 +411,7 @@
                   <span class="producto">${escaparHtml(
                     `${textoCantidadPedido(item)} de ${item.producto.nombre}`
                   )}</span>
-                  <span class="precio">$${precio(item.producto.precio * item.cantidad)}</span>
+                  <span class="precio">$${precio(totalItem(item))}</span>
                 </div>
               `
             )
@@ -582,6 +604,21 @@
       if (target?.id === "buscar") {
         busqueda = target.value;
         renderProductos();
+        return;
+      }
+
+      const inputPrecioManual = target.closest("[data-precio-manual]");
+      if (inputPrecioManual) {
+        const item = carrito[inputPrecioManual.dataset.precioManual];
+        if (!item) return;
+        item.precioManual = Math.max(0, Number(inputPrecioManual.value) || 0);
+        const precioLinea = document.querySelector(`[data-precio-linea="${inputPrecioManual.dataset.precioManual}"]`);
+        if (precioLinea) precioLinea.textContent = "$" + precio(totalItem(item));
+        const items = Object.values(carrito);
+        const subtotalProductos = items.reduce((sum, item) => sum + totalItem(item), 0);
+        const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+        $("total").textContent = "$" + precio(total);
+        actualizarLinkWhatsApp();
         return;
       }
 

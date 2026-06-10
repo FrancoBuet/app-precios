@@ -4,7 +4,7 @@ const WHATSAPP_NEGOCIO = "5493496550978";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const COSTO_ENVIO = 1500;
-const PEDIDO_SCRIPT_VERSION = "sin-texto-bulto-1";
+const PEDIDO_SCRIPT_VERSION = "precio-manual-resumen-1";
 
 export default function PedidoPage() {
   const pedidoScriptSrc = `/pedido.js?whatsapp=${WHATSAPP_NEGOCIO}&envio=${COSTO_ENVIO}&supabaseUrl=${encodeURIComponent(
@@ -615,6 +615,25 @@ const css = `
     margin-top: 3px;
     color: #16a34a;
     font-weight: 900;
+  }
+  .precio-manual {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .precio-manual input {
+    width: min(180px, 100%);
+    min-height: 36px;
+    margin: 0;
+    padding: 7px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #0f172a;
+    font: inherit;
   }
   .linea-pedido button {
     border: none;
