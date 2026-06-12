@@ -22,6 +22,7 @@
   let usandoPrueba = true;
   const modoAdmin = new URLSearchParams(window.location.search).get("admin") === "1";
   let guardandoPedido = false;
+  let envioActivo = true;
 
   const money = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
   const $ = (id) => document.getElementById(id);
@@ -205,10 +206,20 @@
     return Number(item.producto.precio || 0) * item.cantidad;
   }
 
+  function costoEnvio(itemsLength = Object.values(carrito).length) {
+    return itemsLength > 0 && envioActivo ? COSTO_ENVIO : 0;
+  }
+
+  function totalPedido(subtotalProductos, itemsLength = Object.values(carrito).length) {
+    return itemsLength > 0 ? subtotalProductos + costoEnvio(itemsLength) : 0;
+  }
+
   function actualizarTotalesResumen() {
     const items = Object.values(carrito);
     const subtotalProductos = items.reduce((sum, item) => sum + totalItem(item), 0);
-    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const total = totalPedido(subtotalProductos, items.length);
+    const envioPrecio = $("envio-precio");
+    if (envioPrecio) envioPrecio.textContent = "$" + precio(costoEnvio(items.length));
     $("total").textContent = "$" + precio(total);
     actualizarLinkWhatsApp();
   }
@@ -221,7 +232,7 @@
       (sum, item) => sum + totalItem(item),
       0
     );
-    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const total = totalPedido(subtotalProductos, items.length);
 
     if (items.length === 0) {
       resumen.innerHTML = '<p class="vacio">Todavia no agregaste productos.</p>';
@@ -268,8 +279,16 @@
           .join("") +
         `
           <div class="linea-envio">
-            <strong>Envio</strong>
-            <span>$${precio(COSTO_ENVIO)}</span>
+            <div>
+              <strong>Envio</strong>
+              ${modoAdmin ? `
+                <label class="envio-toggle">
+                  <input type="checkbox" id="envio-activo" ${envioActivo ? "checked" : ""} />
+                  Cobrar envio
+                </label>
+              ` : ""}
+            </div>
+            <span id="envio-precio">$${precio(costoEnvio(items.length))}</span>
           </div>
         `;
     }
@@ -327,7 +346,7 @@
       "Hola, quiero hacer este pedido:",
       "",
       ...datos.items.map((item) => `- ${item.texto}: $${precio(item.total)}`),
-      `- Envio: $${precio(datos.envio)}`,
+      datos.envio > 0 ? `- Envio: $${precio(datos.envio)}` : "",
       "",
       `Total: $${precio(datos.total)}`,
       "",
@@ -346,7 +365,7 @@
       (sum, item) => sum + totalItem(item),
       0
     );
-    const total = itemsCarrito.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const total = totalPedido(subtotalProductos, itemsCarrito.length);
     const nombre = $("nombre").value.trim();
     const telefono = $("telefono").value.trim();
     const direccion = $("direccion").value.trim();
@@ -373,7 +392,7 @@
       notas,
       items,
       subtotal: subtotalProductos,
-      envio: items.length > 0 ? COSTO_ENVIO : 0,
+      envio: costoEnvio(items.length),
       total,
       origen: "pedido-web",
     };
@@ -389,7 +408,7 @@
       (sum, item) => sum + totalItem(item),
       0
     );
-    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    const total = totalPedido(subtotalProductos, items.length);
     const nombre = $("nombre").value.trim();
     const telefono = $("telefono").value.trim();
     const direccion = $("direccion").value.trim();
@@ -463,10 +482,12 @@
               `
             )
             .join("")}
-          <div class="linea">
-            <span class="producto">Envio</span>
-            <span class="precio">$${precio(COSTO_ENVIO)}</span>
-          </div>
+          ${costoEnvio(items.length) > 0 ? `
+            <div class="linea">
+              <span class="producto">Envio</span>
+              <span class="precio">$${precio(costoEnvio(items.length))}</span>
+            </div>
+          ` : ""}
           <div class="corte"></div>
           <div class="total">
             <span>Total</span>
@@ -678,6 +699,13 @@
           : Math.max(0, Number(inputPrecioManual.value) || 0);
         const precioLinea = document.querySelector(`[data-precio-linea="${inputPrecioManual.dataset.precioManual}"]`);
         if (precioLinea) precioLinea.textContent = "$" + precio(totalItem(item));
+        actualizarTotalesResumen();
+        return;
+      }
+
+      const inputEnvio = target.closest("#envio-activo");
+      if (inputEnvio) {
+        envioActivo = inputEnvio.checked;
         actualizarTotalesResumen();
         return;
       }
