@@ -46,7 +46,14 @@
     return presentacion.toLowerCase() || "unidad";
   }
 
+  function tieneValorManual(valor) {
+    return valor !== undefined && valor !== null && valor !== "";
+  }
+
   function cantidadPedido(item) {
+    if (tieneValorManual(item.cantidadManual)) {
+      return Math.max(0, Number(item.cantidadManual) || 0);
+    }
     return Number((Number(item.producto.kilos || 1) * item.cantidad).toFixed(2));
   }
 
@@ -58,8 +65,11 @@
 
   function textoCantidadPedido(item) {
     if (item.lista === "mayorista") {
-      const cantidad = mostrarCantidad(item.cantidad);
-      const unidadBulto = unidadMayorista(item.producto, item.cantidad);
+      const cantidadMayorista = tieneValorManual(item.cantidadManual)
+        ? Math.max(0, Number(item.cantidadManual) || 0)
+        : item.cantidad;
+      const cantidad = mostrarCantidad(cantidadMayorista);
+      const unidadBulto = unidadMayorista(item.producto, cantidadMayorista);
       return `${cantidad} ${unidadBulto}`;
     }
 
@@ -174,11 +184,33 @@
       .join("");
   }
 
+  function cantidadManualSugerida(item) {
+    if (tieneValorManual(item.cantidadManual)) return item.cantidadManual;
+    return item.lista === "mayorista" ? item.cantidad : cantidadPedido(item);
+  }
+
   function totalItem(item) {
-    if (item.precioManual !== undefined && item.precioManual !== null && item.precioManual !== "") {
+    if (tieneValorManual(item.precioManual)) {
       return Math.max(0, Number(item.precioManual) || 0);
     }
+    if (tieneValorManual(item.cantidadManual)) {
+      const cantidadManual = Math.max(0, Number(item.cantidadManual) || 0);
+      if (item.lista === "mayorista") {
+        return Number(item.producto.precio || 0) * cantidadManual;
+      }
+      const kilosBase = Math.max(1, Number(item.producto.kilos || 1));
+      const cantidadEquivalente = cantidadManual / kilosBase;
+      return Number(item.producto.precio || 0) * cantidadEquivalente;
+    }
     return Number(item.producto.precio || 0) * item.cantidad;
+  }
+
+  function actualizarTotalesResumen() {
+    const items = Object.values(carrito);
+    const subtotalProductos = items.reduce((sum, item) => sum + totalItem(item), 0);
+    const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
+    $("total").textContent = "$" + precio(total);
+    actualizarLinkWhatsApp();
   }
 
   function renderResumen() {
@@ -200,20 +232,33 @@
             (item) => `
           <div class="linea-pedido">
             <div>
-              <strong>${textoCantidadPedido(item)} de ${item.producto.nombre}</strong>
+              <strong data-texto-linea="${item.producto.id}">${textoCantidadPedido(item)} de ${item.producto.nombre}</strong>
               <span data-precio-linea="${item.producto.id}">$${precio(totalItem(item))}</span>
               ${modoAdmin ? `
-                <label class="precio-manual">
-                  Precio manual
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value="${Math.round(totalItem(item))}"
-                    data-precio-manual="${item.producto.id}"
-                    aria-label="Precio manual de ${item.producto.nombre}"
-                  />
-                </label>
+                <div class="campos-manuales">
+                  <label class="campo-manual">
+                    Cantidad manual
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value="${cantidadManualSugerida(item)}"
+                      data-cantidad-manual="${item.producto.id}"
+                      aria-label="Cantidad manual de ${item.producto.nombre}"
+                    />
+                  </label>
+                  <label class="campo-manual">
+                    Precio manual
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value="${Math.round(totalItem(item))}"
+                      data-precio-manual="${item.producto.id}"
+                      aria-label="Precio manual de ${item.producto.nombre}"
+                    />
+                  </label>
+                </div>
               ` : ""}
             </div>
             <button type="button" data-quitar="${item.producto.id}">x</button>
@@ -268,7 +313,8 @@
       delete carrito[producto.id];
     } else {
       const precioManual = carrito[producto.id]?.precioManual;
-      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)), lista, precioManual };
+      const cantidadManual = carrito[producto.id]?.cantidadManual;
+      carrito[producto.id] = { producto, cantidad: Number(nueva.toFixed(2)), lista, precioManual, cantidadManual };
     }
 
     render();
@@ -317,6 +363,7 @@
       total: totalItem(item),
       oferta: Boolean(item.producto.oferta),
       precio_manual: item.precioManual ?? null,
+      cantidad_manual: item.cantidadManual ?? null,
     }));
 
     return {
@@ -607,18 +654,31 @@
         return;
       }
 
+      const inputCantidadManual = target.closest("[data-cantidad-manual]");
+      if (inputCantidadManual) {
+        const item = carrito[inputCantidadManual.dataset.cantidadManual];
+        if (!item) return;
+        item.cantidadManual = inputCantidadManual.value === ""
+          ? ""
+          : Math.max(0, Number(inputCantidadManual.value) || 0);
+        const textoLinea = document.querySelector(`[data-texto-linea="${inputCantidadManual.dataset.cantidadManual}"]`);
+        if (textoLinea) textoLinea.textContent = `${textoCantidadPedido(item)} de ${item.producto.nombre}`;
+        const precioLinea = document.querySelector(`[data-precio-linea="${inputCantidadManual.dataset.cantidadManual}"]`);
+        if (precioLinea) precioLinea.textContent = "$" + precio(totalItem(item));
+        actualizarTotalesResumen();
+        return;
+      }
+
       const inputPrecioManual = target.closest("[data-precio-manual]");
       if (inputPrecioManual) {
         const item = carrito[inputPrecioManual.dataset.precioManual];
         if (!item) return;
-        item.precioManual = Math.max(0, Number(inputPrecioManual.value) || 0);
+        item.precioManual = inputPrecioManual.value === ""
+          ? ""
+          : Math.max(0, Number(inputPrecioManual.value) || 0);
         const precioLinea = document.querySelector(`[data-precio-linea="${inputPrecioManual.dataset.precioManual}"]`);
         if (precioLinea) precioLinea.textContent = "$" + precio(totalItem(item));
-        const items = Object.values(carrito);
-        const subtotalProductos = items.reduce((sum, item) => sum + totalItem(item), 0);
-        const total = items.length > 0 ? subtotalProductos + COSTO_ENVIO : 0;
-        $("total").textContent = "$" + precio(total);
-        actualizarLinkWhatsApp();
+        actualizarTotalesResumen();
         return;
       }
 
