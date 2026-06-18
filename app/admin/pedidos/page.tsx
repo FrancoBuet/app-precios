@@ -9,6 +9,8 @@ type ItemPedido = {
   total?: number;
 };
 
+type FiltroReporte = "hoy" | "mes" | "todos";
+
 type Pedido = {
   id: string;
   numero: number | null;
@@ -29,6 +31,22 @@ const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PEDIDOS_PIN || "2026";
 
 function precio(valor: number | null | undefined) {
   return money.format(Math.round(Number(valor || 0)));
+}
+
+function inicioDelDia(fecha: Date) {
+  const inicio = new Date(fecha);
+  inicio.setHours(0, 0, 0, 0);
+  return inicio;
+}
+
+function inicioDelMes(fecha: Date) {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+}
+
+function etiquetaFiltro(filtro: FiltroReporte) {
+  if (filtro === "hoy") return "Ventas de hoy";
+  if (filtro === "mes") return "Ventas de este mes";
+  return "Historial de pedidos";
 }
 
 function escaparHtml(texto: string | number | null | undefined) {
@@ -135,14 +153,27 @@ export default function AdminPedidosPage() {
   const [autorizado, setAutorizado] = useState(false);
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
+  const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
   const impresosRef = useRef<Set<string>>(new Set());
 
   const cargarPedidos = useCallback(async () => {
-    const { data, error } = await supabase
+    setCargando(true);
+
+    let query = supabase
       .from("pedidos")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(filtroReporte === "todos" ? 500 : 300);
+
+    const ahora = new Date();
+    if (filtroReporte === "hoy") {
+      query = query.gte("created_at", inicioDelDia(ahora).toISOString());
+    }
+    if (filtroReporte === "mes") {
+      query = query.gte("created_at", inicioDelMes(ahora).toISOString());
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       setErrorCarga(error.message);
@@ -151,7 +182,7 @@ export default function AdminPedidosPage() {
       setPedidos(data as Pedido[]);
     }
     setCargando(false);
-  }, []);
+  }, [filtroReporte]);
 
   async function marcarImpreso(pedido: Pedido) {
     await supabase
@@ -216,6 +247,11 @@ export default function AdminPedidosPage() {
     setPin("");
   }
 
+  const totalVendido = pedidos.reduce((sum, pedido) => sum + Number(pedido.total || 0), 0);
+  const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
+  const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
+  const textoFiltro = etiquetaFiltro(filtroReporte);
+
   if (!autorizado) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4 text-slate-950">
@@ -246,7 +282,7 @@ export default function AdminPedidosPage() {
           <div>
             <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
             <h1 className="m-0 text-3xl font-black">Pedidos recibidos</h1>
-            <p className="m-0 text-sm font-bold text-slate-600">Pedidos nuevos arriba</p>
+            <p className="m-0 text-sm font-bold text-slate-600">Pedidos nuevos arriba - {textoFiltro}</p>
           </div>
 
           <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-black shadow">
@@ -266,6 +302,46 @@ export default function AdminPedidosPage() {
           </button>
         </div>
 
+        <div className="mb-4 grid gap-3 rounded-2xl bg-white p-4 shadow">
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["hoy", "Hoy"],
+              ["mes", "Este mes"],
+              ["todos", "Todos"],
+            ] as const).map(([valor, texto]) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => setFiltroReporte(valor)}
+                className={`rounded-xl px-4 py-3 font-black ${
+                  filtroReporte === valor
+                    ? "bg-green-600 text-white"
+                    : "border border-slate-300 bg-white text-slate-950"
+                }`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-100 p-4">
+              <p className="m-0 text-sm font-bold text-slate-600">Pedidos</p>
+              <strong className="text-2xl">{pedidos.length}</strong>
+            </div>
+            <div className="rounded-xl bg-slate-100 p-4">
+              <p className="m-0 text-sm font-bold text-slate-600">Total vendido</p>
+              <strong className="text-2xl">$ {precio(totalVendido)}</strong>
+            </div>
+            <div className="rounded-xl bg-slate-100 p-4">
+              <p className="m-0 text-sm font-bold text-slate-600">Promedio</p>
+              <strong className="text-2xl">$ {precio(promedioPedido)}</strong>
+            </div>
+          </div>
+          <p className="m-0 text-sm font-bold text-slate-600">
+            Envios cobrados: $ {precio(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
+          </p>
+        </div>
+
         {cargando ? (
           <div className="rounded-2xl bg-white p-5 font-bold shadow">Cargando pedidos...</div>
         ) : errorCarga ? (
@@ -273,7 +349,7 @@ export default function AdminPedidosPage() {
             No se pudo leer la tabla de pedidos. Ejecuta primero el SQL de <code>supabase-pedidos.sql</code>.
           </div>
         ) : pedidos.length === 0 ? (
-          <div className="rounded-2xl bg-white p-5 font-bold shadow">Todavia no hay pedidos guardados.</div>
+          <div className="rounded-2xl bg-white p-5 font-bold shadow">No hay pedidos para este filtro.</div>
         ) : (
           <div className="grid gap-3">
             {pedidos.map((pedido) => (
@@ -281,11 +357,11 @@ export default function AdminPedidosPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
                   <div>
                     <h2 className="m-0 text-xl font-black">
-                      {pedido.numero ? `Pedido #${pedido.numero} · ` : ""}
+                      {pedido.numero ? `Pedido #${pedido.numero} - ` : ""}
                       {pedido.cliente_nombre || "Sin nombre"}
                     </h2>
                     <p className="m-0 text-sm text-slate-600">
-                      {new Date(pedido.created_at).toLocaleString("es-AR")} · {pedido.estado}
+                      {new Date(pedido.created_at).toLocaleString("es-AR")} - {pedido.estado}
                     </p>
                   </div>
                   <strong className="text-2xl">$ {precio(pedido.total)}</strong>
