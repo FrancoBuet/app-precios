@@ -154,10 +154,11 @@ export default function AdminPedidosPage() {
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
+  const [hayActualizacion, setHayActualizacion] = useState(false);
   const impresosRef = useRef<Set<string>>(new Set());
 
-  const cargarPedidos = useCallback(async () => {
-    setCargando(true);
+  const cargarPedidos = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCargando(true);
 
     let query = supabase
       .from("pedidos")
@@ -181,8 +182,9 @@ export default function AdminPedidosPage() {
     } else if (Array.isArray(data)) {
       setErrorCarga("");
       setPedidos(data as Pedido[]);
+      setHayActualizacion(false);
     }
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }, [filtroReporte]);
 
   async function marcarImpreso(pedido: Pedido) {
@@ -233,9 +235,15 @@ export default function AdminPedidosPage() {
   useEffect(() => {
     if (!autorizado) return;
     cargarPedidos();
-    const timer = window.setInterval(cargarPedidos, 6000);
+    const timer = window.setInterval(() => {
+      if (window.scrollY < 120 || autoImprimir) {
+        cargarPedidos(true);
+      } else {
+        setHayActualizacion(true);
+      }
+    }, 6000);
     return () => window.clearInterval(timer);
-  }, [autorizado, cargarPedidos]);
+  }, [autorizado, autoImprimir, cargarPedidos]);
 
   useEffect(() => {
     if (!autoImprimir) return;
@@ -271,6 +279,11 @@ export default function AdminPedidosPage() {
   const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
   const textoFiltro = etiquetaFiltro(filtroReporte);
+
+  function actualizarAhora() {
+    cargarPedidos();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   if (!autorizado) {
     return (
@@ -361,6 +374,16 @@ export default function AdminPedidosPage() {
             Envios cobrados: $ {precio(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
           </p>
         </div>
+
+        {hayActualizacion ? (
+          <button
+            type="button"
+            onClick={actualizarAhora}
+            className="mb-4 w-full rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow"
+          >
+            Hay pedidos nuevos o cambios - tocar para actualizar
+          </button>
+        ) : null}
 
         {cargando ? (
           <div className="rounded-2xl bg-white p-5 font-bold shadow">Cargando pedidos...</div>
