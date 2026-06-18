@@ -163,6 +163,7 @@ export default function AdminPedidosPage() {
       .from("pedidos")
       .select("*")
       .order("created_at", { ascending: false })
+      .neq("estado", "eliminado")
       .limit(filtroReporte === "todos" ? 500 : 300);
 
     const ahora = new Date();
@@ -195,12 +196,15 @@ export default function AdminPedidosPage() {
   async function eliminarPedido(pedido: Pedido) {
     const nombre = pedido.cliente_nombre || "sin nombre";
     const numero = pedido.numero ? `#${pedido.numero}` : "seleccionado";
-    const confirma = window.confirm(`Eliminar definitivamente el pedido ${numero} de ${nombre}?`);
+    const confirma = window.confirm(`Eliminar de la lista y reportes el pedido ${numero} de ${nombre}?`);
     if (!confirma) return;
 
-    const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ estado: "eliminado" })
+      .eq("id", pedido.id);
     if (error) {
-      alert(`No se pudo eliminar el pedido. Si es la primera vez, ejecuta el SQL actualizado de supabase-pedidos.sql. Detalle: ${error.message}`);
+      alert(`No se pudo eliminar el pedido. Detalle: ${error.message}`);
       return;
     }
 
