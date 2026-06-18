@@ -40,6 +40,14 @@ to anon, authenticated
 using (true)
 with check (true);
 
+
+drop policy if exists "Permitir eliminar pedidos" on public.pedidos;
+create policy "Permitir eliminar pedidos"
+on public.pedidos
+for delete
+to anon, authenticated
+using (true);
+
 create index if not exists pedidos_created_at_idx on public.pedidos (created_at desc);
 create index if not exists pedidos_estado_idx on public.pedidos (estado);
 

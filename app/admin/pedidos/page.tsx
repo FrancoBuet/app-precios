@@ -192,6 +192,22 @@ export default function AdminPedidosPage() {
     cargarPedidos();
   }
 
+  async function eliminarPedido(pedido: Pedido) {
+    const nombre = pedido.cliente_nombre || "sin nombre";
+    const numero = pedido.numero ? `#${pedido.numero}` : "seleccionado";
+    const confirma = window.confirm(`Eliminar definitivamente el pedido ${numero} de ${nombre}?`);
+    if (!confirma) return;
+
+    const { error } = await supabase.from("pedidos").delete().eq("id", pedido.id);
+    if (error) {
+      alert(`No se pudo eliminar el pedido. Si es la primera vez, ejecuta el SQL actualizado de supabase-pedidos.sql. Detalle: ${error.message}`);
+      return;
+    }
+
+    impresosRef.current.delete(pedido.id);
+    cargarPedidos();
+  }
+
   async function imprimirPedido(pedido: Pedido) {
     const ventana = window.open("", "_blank", "width=380,height=640");
     if (!ventana) {
@@ -400,6 +416,13 @@ export default function AdminPedidosPage() {
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black"
                   >
                     Marcar impreso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => eliminarPedido(pedido)}
+                    className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                  >
+                    Eliminar
                   </button>
                 </div>
               </article>
