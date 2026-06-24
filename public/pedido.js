@@ -65,6 +65,17 @@
   }
 
   function textoCantidadPedido(item) {
+    const nombreProducto = String(item.producto.nombre || "").toUpperCase();
+
+    // A maple is sold as one package even when its presentation records 30 eggs.
+    if (nombreProducto.includes("MAPLE")) {
+      const cantidadMaples = tieneValorManual(item.cantidadManual)
+        ? Math.max(0, Number(item.cantidadManual) || 0)
+        : item.cantidad;
+      const cantidad = mostrarCantidad(cantidadMaples);
+      return `${cantidad} ${Number(cantidadMaples) === 1 ? "maple" : "maples"}`;
+    }
+
     if (item.lista === "mayorista") {
       const cantidadMayorista = tieneValorManual(item.cantidadManual)
         ? Math.max(0, Number(item.cantidadManual) || 0)
