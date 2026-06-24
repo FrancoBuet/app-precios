@@ -145,6 +145,7 @@
   function productosFiltrados() {
     const termino = String(busqueda || "").trim().toLowerCase();
     return productos
+      .filter((p) => p.sin_stock !== true)
       .filter((p) => String(p.nombre || "").toLowerCase().includes(termino))
       .filter((p) => {
         if (seccion === "ofertas") return Boolean(p.oferta);

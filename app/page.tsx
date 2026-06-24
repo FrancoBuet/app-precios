@@ -207,6 +207,22 @@ export default function Home() {
     mostrarMensaje("Producto eliminado");
   }
 
+  async function cambiarStock(producto: any) {
+    const sinStock = !Boolean(producto.sin_stock);
+    const { error } = await supabase
+      .from("productos")
+      .update({ sin_stock: sinStock })
+      .eq("id", producto.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await obtenerProductos();
+    mostrarMensaje(sinStock ? "Producto marcado sin stock" : "Producto reactivado");
+  }
+
   function editarProducto(producto: any) {
     setEditandoId(producto.id);
     setNombre(producto.nombre || "");
@@ -257,7 +273,7 @@ export default function Home() {
   }
 
   function obtenerProductosParaPDF(tipo: string) {
-    let lista = [...productos];
+    let lista = productos.filter((producto) => producto.sin_stock !== true);
 
     if (tipo === "ofertas") {
       lista = lista.filter((p) => p.oferta);
@@ -360,8 +376,10 @@ export default function Home() {
     setMostrarOpcionesCompartir(false);
   }
 
-  let productosFiltrados = productos.filter((producto) =>
-    producto.nombre?.toLowerCase().includes(busqueda.toLowerCase())
+  let productosFiltrados = productos.filter(
+    (producto) =>
+      (user || producto.sin_stock !== true) &&
+      producto.nombre?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   if (seccion === "ofertas") {
@@ -1126,6 +1144,18 @@ export default function Home() {
                     }}
                   >
                     ✏️ Editar
+                  </button>
+
+                  <button
+                    onClick={() => cambiarStock(producto)}
+                    style={{
+                      ...botonCard(producto.sin_stock ? "#16a34a" : "#64748b"),
+                      padding: 9,
+                      marginTop: 0,
+                      fontSize: 12,
+                    }}
+                  >
+                    {producto.sin_stock ? "Reactivar" : "Sin stock"}
                   </button>
 
                   <button
