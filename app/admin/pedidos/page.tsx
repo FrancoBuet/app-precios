@@ -33,6 +33,26 @@ function precio(valor: number | null | undefined) {
   return money.format(Math.round(Number(valor || 0)));
 }
 
+function EyeIcon({ hidden }: { hidden: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+      {hidden ? (
+        <>
+          <path d="M3 3l18 18" />
+          <path d="M10.6 10.6A2 2 0 0 0 12 14a2 2 0 0 0 1.4-.6" />
+          <path d="M9.9 5.1A9.5 9.5 0 0 1 12 5c5 0 8.5 4.5 9.5 7a12.4 12.4 0 0 1-2.2 3.4" />
+          <path d="M6.6 6.6A12.3 12.3 0 0 0 2.5 12c1 2.5 4.5 7 9.5 7a9.7 9.7 0 0 0 4.2-1" />
+        </>
+      ) : (
+        <>
+          <path d="M2.5 12c1-2.5 4.5-7 9.5-7s8.5 4.5 9.5 7c-1 2.5-4.5 7-9.5 7s-8.5-4.5-9.5-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function inicioDelDia(fecha: Date) {
   const inicio = new Date(fecha);
   inicio.setHours(0, 0, 0, 0);
@@ -155,6 +175,7 @@ export default function AdminPedidosPage() {
   const [errorPin, setErrorPin] = useState("");
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
   const [hayActualizacion, setHayActualizacion] = useState(false);
+  const [montosVisibles, setMontosVisibles] = useState(false);
   const impresosRef = useRef<Set<string>>(new Set());
 
   const cargarPedidos = useCallback(async (silencioso = false) => {
@@ -279,6 +300,7 @@ export default function AdminPedidosPage() {
   const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
   const textoFiltro = etiquetaFiltro(filtroReporte);
+  const montoAdmin = (valor: number | null | undefined) => (montosVisibles ? `$ ${precio(valor)}` : "*****");
 
   function actualizarAhora() {
     cargarPedidos();
@@ -336,25 +358,39 @@ export default function AdminPedidosPage() {
         </div>
 
         <div className="mb-4 grid gap-3 rounded-2xl bg-white p-4 shadow">
-          <div className="flex flex-wrap gap-2">
-            {([
-              ["hoy", "Hoy"],
-              ["mes", "Este mes"],
-              ["todos", "Todos"],
-            ] as const).map(([valor, texto]) => (
-              <button
-                key={valor}
-                type="button"
-                onClick={() => setFiltroReporte(valor)}
-                className={`rounded-xl px-4 py-3 font-black ${
-                  filtroReporte === valor
-                    ? "bg-green-600 text-white"
-                    : "border border-slate-300 bg-white text-slate-950"
-                }`}
-              >
-                {texto}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["hoy", "Hoy"],
+                ["mes", "Este mes"],
+                ["todos", "Todos"],
+              ] as const).map(([valor, texto]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setFiltroReporte(valor)}
+                  className={`rounded-xl px-4 py-3 font-black ${
+                    filtroReporte === valor
+                      ? "bg-green-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-950"
+                  }`}
+                >
+                  {texto}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setMontosVisibles((visible) => !visible)}
+              aria-label={montosVisibles ? "Ocultar montos" : "Ver montos"}
+              title={montosVisibles ? "Ocultar montos" : "Ver montos"}
+              className={`flex items-center gap-2 rounded-xl px-4 py-3 font-black ${
+                montosVisibles ? "bg-slate-950 text-white" : "border border-slate-300 bg-white text-slate-950"
+              }`}
+            >
+              <EyeIcon hidden={!montosVisibles} />
+              {montosVisibles ? "Ocultar montos" : "Ver montos"}
+            </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-slate-100 p-4">
@@ -363,15 +399,15 @@ export default function AdminPedidosPage() {
             </div>
             <div className="rounded-xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Total vendido</p>
-              <strong className="text-2xl">$ {precio(totalVendido)}</strong>
+              <strong className="text-2xl">{montoAdmin(totalVendido)}</strong>
             </div>
             <div className="rounded-xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Promedio</p>
-              <strong className="text-2xl">$ {precio(promedioPedido)}</strong>
+              <strong className="text-2xl">{montoAdmin(promedioPedido)}</strong>
             </div>
           </div>
           <p className="m-0 text-sm font-bold text-slate-600">
-            Envios cobrados: $ {precio(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
+            Envios cobrados: {montoAdmin(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
           </p>
         </div>
 
@@ -407,19 +443,19 @@ export default function AdminPedidosPage() {
                       {new Date(pedido.created_at).toLocaleString("es-AR")} - {pedido.estado}
                     </p>
                   </div>
-                  <strong className="text-2xl">$ {precio(pedido.total)}</strong>
+                  <strong className="text-2xl">{montoAdmin(pedido.total)}</strong>
                 </div>
 
                 <div className="my-3 grid gap-1">
                   {(pedido.items || []).map((item, index) => (
                     <div key={index} className="flex justify-between gap-3 text-sm">
                       <span className="font-bold">{item.texto || item.nombre}</span>
-                      <span>$ {precio(item.total)}</span>
+                      <span>{montoAdmin(item.total)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between gap-3 text-sm">
                     <span className="font-bold">Envio</span>
-                    <span>$ {precio(pedido.envio)}</span>
+                    <span>{montoAdmin(pedido.envio)}</span>
                   </div>
                 </div>
 
