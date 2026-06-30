@@ -48,6 +48,13 @@ to anon, authenticated
 using (true)
 with check (true);
 
+drop policy if exists "Permitir eliminar clientes cuenta corriente" on public.clientes_cuenta_corriente;
+create policy "Permitir eliminar clientes cuenta corriente"
+on public.clientes_cuenta_corriente
+for delete
+to anon, authenticated
+using (true);
+
 drop policy if exists "Permitir leer movimientos cuenta corriente" on public.cuenta_corriente_movimientos;
 create policy "Permitir leer movimientos cuenta corriente"
 on public.cuenta_corriente_movimientos
@@ -69,6 +76,13 @@ for update
 to anon, authenticated
 using (true)
 with check (true);
+
+drop policy if exists "Permitir eliminar movimientos cuenta corriente" on public.cuenta_corriente_movimientos;
+create policy "Permitir eliminar movimientos cuenta corriente"
+on public.cuenta_corriente_movimientos
+for delete
+to anon, authenticated
+using (true);
 
 create index if not exists clientes_cc_telefono_idx on public.clientes_cuenta_corriente (telefono);
 create index if not exists clientes_cc_telefono_normalizado_idx on public.clientes_cuenta_corriente (telefono_normalizado);

@@ -78,6 +78,15 @@ function escaparHtml(texto: string | number | null | undefined) {
     .replace(/'/g, "&#39;");
 }
 
+function detallePedidoCuentaCorriente(pedido: Pedido) {
+  const titulo = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
+  const productos = (pedido.items || [])
+    .map((item) => `- ${item.texto || item.nombre || "Producto"}: $ ${precio(item.total)}`)
+    .join("\n");
+  const envio = Number(pedido.envio || 0) > 0 ? `\n- Envio: $ ${precio(pedido.envio)}` : "";
+  return `${titulo}\n${productos}${envio}`;
+}
+
 function htmlTicket(pedido: Pedido) {
   const fecha = new Date(pedido.created_at).toLocaleString("es-AR", {
     dateStyle: "short",
@@ -281,7 +290,7 @@ export default function AdminPedidosPage() {
       clienteId = data.id;
     }
 
-    const detalle = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
+    const detalle = detallePedidoCuentaCorriente(pedido);
     const { error: movError } = await supabase.from("cuenta_corriente_movimientos").insert({
       cliente_id: clienteId,
       pedido_id: pedido.id,

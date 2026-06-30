@@ -85,6 +85,12 @@ export default function CuentaCorrientePage() {
     monto: string;
     detalle: string;
   } | null>(null);
+  const [editandoCliente, setEditandoCliente] = useState({
+    nombre: "",
+    telefono: "",
+    direccion: "",
+    notas: "",
+  });
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -136,6 +142,26 @@ export default function CuentaCorrientePage() {
 
   const clienteSeleccionado = clientesConSaldo.find((cliente) => cliente.id === clienteActivo) || clientesConSaldo[0];
   const totalDeuda = clientesConSaldo.reduce((sum, cliente) => sum + Math.max(cliente.saldo, 0), 0);
+
+  useEffect(() => {
+    if (!clienteSeleccionado) {
+      setEditandoCliente({ nombre: "", telefono: "", direccion: "", notas: "" });
+      return;
+    }
+
+    setEditandoCliente({
+      nombre: clienteSeleccionado.nombre || "",
+      telefono: clienteSeleccionado.telefono || "",
+      direccion: clienteSeleccionado.direccion || "",
+      notas: clienteSeleccionado.notas || "",
+    });
+  }, [
+    clienteSeleccionado?.id,
+    clienteSeleccionado?.nombre,
+    clienteSeleccionado?.telefono,
+    clienteSeleccionado?.direccion,
+    clienteSeleccionado?.notas,
+  ]);
 
   function ingresarAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -201,6 +227,55 @@ export default function CuentaCorrientePage() {
     }
 
     setMovimiento({ tipo: "pago", monto: "", detalle: "" });
+    cargarDatos();
+  }
+
+  async function guardarCliente(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!clienteSeleccionado) return;
+    if (!editandoCliente.nombre.trim()) {
+      alert("El cliente necesita un nombre.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("clientes_cuenta_corriente")
+      .update({
+        nombre: editandoCliente.nombre.trim(),
+        telefono: editandoCliente.telefono.trim() || null,
+        telefono_normalizado: normalizarTelefono(editandoCliente.telefono) || null,
+        direccion: editandoCliente.direccion.trim() || null,
+        notas: editandoCliente.notas.trim() || null,
+      })
+      .eq("id", clienteSeleccionado.id);
+
+    if (error) {
+      alert(`No se pudo guardar el cliente. Detalle: ${error.message}`);
+      return;
+    }
+
+    cargarDatos();
+  }
+
+  async function eliminarCliente() {
+    if (!clienteSeleccionado) return;
+    const confirma = window.confirm(
+      `Eliminar a ${clienteSeleccionado.nombre} y todos sus movimientos de cuenta corriente?`
+    );
+    if (!confirma) return;
+
+    const { error } = await supabase
+      .from("clientes_cuenta_corriente")
+      .delete()
+      .eq("id", clienteSeleccionado.id);
+
+    if (error) {
+      alert(`No se pudo eliminar el cliente. Detalle: ${error.message}`);
+      return;
+    }
+
+    setClienteActivo("");
+    setEditando(null);
     cargarDatos();
   }
 
@@ -373,6 +448,7 @@ export default function CuentaCorrientePage() {
                   >
                     <span className="block text-base">{cliente.nombre}</span>
                     <span className="block text-sm text-slate-600">{cliente.telefono || "Sin telefono"}</span>
+                    {cliente.notas ? <span className="block text-xs text-slate-500">{cliente.notas}</span> : null}
                     <span className={`block text-lg ${cliente.saldo > 0 ? "text-red-700" : "text-green-700"}`}>
                       $ {precio(cliente.saldo)}
                     </span>
@@ -391,11 +467,64 @@ export default function CuentaCorrientePage() {
                     <p className="m-0 text-sm font-bold text-slate-600">
                       Tel: {clienteSeleccionado.telefono || "-"} - Dir: {clienteSeleccionado.direccion || "-"}
                     </p>
+                    {clienteSeleccionado.notas ? (
+                      <p className="m-0 mt-1 text-sm font-bold text-slate-500">Notas: {clienteSeleccionado.notas}</p>
+                    ) : null}
                   </div>
                   <strong className={`text-3xl ${clienteSeleccionado.saldo > 0 ? "text-red-700" : "text-green-700"}`}>
                     $ {precio(clienteSeleccionado.saldo)}
                   </strong>
                 </div>
+
+                <form onSubmit={guardarCliente} className="mb-4 grid gap-3 rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                  <h3 className="m-0 text-lg font-black">Datos del cliente</h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <input
+                      value={editandoCliente.nombre}
+                      onChange={(event) =>
+                        setEditandoCliente((actual) => ({ ...actual, nombre: event.target.value }))
+                      }
+                      placeholder="Nombre"
+                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                    />
+                    <input
+                      value={editandoCliente.telefono}
+                      onChange={(event) =>
+                        setEditandoCliente((actual) => ({ ...actual, telefono: event.target.value }))
+                      }
+                      placeholder="Telefono"
+                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                    />
+                    <input
+                      value={editandoCliente.direccion}
+                      onChange={(event) =>
+                        setEditandoCliente((actual) => ({ ...actual, direccion: event.target.value }))
+                      }
+                      placeholder="Direccion"
+                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                    />
+                    <input
+                      value={editandoCliente.notas}
+                      onChange={(event) =>
+                        setEditandoCliente((actual) => ({ ...actual, notas: event.target.value }))
+                      }
+                      placeholder="Notas"
+                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+                      Guardar cliente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={eliminarCliente}
+                      className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                    >
+                      Eliminar cliente
+                    </button>
+                  </div>
+                </form>
 
                 <form onSubmit={agregarMovimiento} className="mb-4 grid gap-3 rounded-xl bg-slate-100 p-3">
                   <div className="grid gap-3 md:grid-cols-[160px_1fr_1fr]">
@@ -459,13 +588,13 @@ export default function CuentaCorrientePage() {
                                 className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
                                 autoFocus
                               />
-                              <input
+                              <textarea
                                 value={editando.detalle}
                                 onChange={(event) =>
                                   setEditando((actual) => (actual ? { ...actual, detalle: event.target.value } : actual))
                                 }
                                 placeholder="Detalle"
-                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                                className="min-h-28 rounded-xl border border-slate-300 px-4 py-3 font-bold"
                               />
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -484,7 +613,7 @@ export default function CuentaCorrientePage() {
                         ) : (
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                              <p className="m-0 font-black">{mov.detalle}</p>
+                              <p className="m-0 whitespace-pre-line font-black">{mov.detalle}</p>
                               <p className="m-0 text-sm text-slate-600">
                                 {new Date(mov.created_at).toLocaleString("es-AR")} - {mov.tipo}
                               </p>
