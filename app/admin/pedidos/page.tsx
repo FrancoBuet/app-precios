@@ -443,19 +443,19 @@ export default function AdminPedidosPage() {
                       {new Date(pedido.created_at).toLocaleString("es-AR")} - {pedido.estado}
                     </p>
                   </div>
-                  <strong className="text-2xl">{montoAdmin(pedido.total)}</strong>
+                  <strong className="text-2xl">$ {precio(pedido.total)}</strong>
                 </div>
 
                 <div className="my-3 grid gap-1">
                   {(pedido.items || []).map((item, index) => (
                     <div key={index} className="flex justify-between gap-3 text-sm">
                       <span className="font-bold">{item.texto || item.nombre}</span>
-                      <span>{montoAdmin(item.total)}</span>
+                      <span>$ {precio(item.total)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between gap-3 text-sm">
                     <span className="font-bold">Envio</span>
-                    <span>{montoAdmin(pedido.envio)}</span>
+                    <span>$ {precio(pedido.envio)}</span>
                   </div>
                 </div>
 
