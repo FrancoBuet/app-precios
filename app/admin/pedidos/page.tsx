@@ -185,6 +185,7 @@ export default function AdminPedidosPage() {
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
   const [hayActualizacion, setHayActualizacion] = useState(false);
   const [montosVisibles, setMontosVisibles] = useState(false);
+  const [busquedaPedidos, setBusquedaPedidos] = useState("");
   const impresosRef = useRef<Set<string>>(new Set());
 
   const cargarPedidos = useCallback(async (silencioso = false) => {
@@ -375,6 +376,20 @@ export default function AdminPedidosPage() {
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
   const textoFiltro = etiquetaFiltro(filtroReporte);
   const montoAdmin = (valor: number | null | undefined) => (montosVisibles ? `$ ${precio(valor)}` : "*****");
+  const pedidosFiltrados = pedidos.filter((pedido) => {
+    const textoItems = (pedido.items || []).map((item) => `${item.texto || ""} ${item.nombre || ""}`).join(" ");
+    const texto = `
+      ${pedido.numero || ""}
+      ${pedido.cliente_nombre || ""}
+      ${pedido.cliente_telefono || ""}
+      ${pedido.direccion || ""}
+      ${pedido.notas || ""}
+      ${pedido.estado || ""}
+      ${textoItems}
+    `.toLowerCase();
+
+    return texto.includes(busquedaPedidos.trim().toLowerCase());
+  });
 
   function actualizarAhora() {
     cargarPedidos();
@@ -489,6 +504,17 @@ export default function AdminPedidosPage() {
           <p className="m-0 text-sm font-bold text-slate-600">
             Envios cobrados: {montoAdmin(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
           </p>
+          <input
+            value={busquedaPedidos}
+            onChange={(event) => setBusquedaPedidos(event.target.value)}
+            placeholder="Buscar pedido por nombre, telefono, direccion o producto"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
+          />
+          {busquedaPedidos.trim() ? (
+            <p className="m-0 text-sm font-bold text-slate-600">
+              Mostrando {pedidosFiltrados.length} de {pedidos.length} pedidos
+            </p>
+          ) : null}
         </div>
 
         {hayActualizacion ? (
@@ -509,9 +535,11 @@ export default function AdminPedidosPage() {
           </div>
         ) : pedidos.length === 0 ? (
           <div className="rounded-2xl bg-white p-5 font-bold shadow">No hay pedidos para este filtro.</div>
+        ) : pedidosFiltrados.length === 0 ? (
+          <div className="rounded-2xl bg-white p-5 font-bold shadow">No hay pedidos que coincidan con la busqueda.</div>
         ) : (
           <div className="grid gap-3">
-            {pedidos.map((pedido) => (
+            {pedidosFiltrados.map((pedido) => (
               <article key={pedido.id} className="rounded-2xl bg-white p-4 shadow">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
                   <div>

@@ -321,6 +321,24 @@ export default function CuentaCorrientePage() {
     cargarDatos();
   }
 
+  async function eliminarMovimiento(mov: MovimientoCuenta) {
+    const confirma = window.confirm("Eliminar este movimiento de la cuenta corriente? No se borra el pedido original.");
+    if (!confirma) return;
+
+    const { error } = await supabase
+      .from("cuenta_corriente_movimientos")
+      .delete()
+      .eq("id", mov.id);
+
+    if (error) {
+      alert(`No se pudo eliminar el movimiento. Detalle: ${error.message}`);
+      return;
+    }
+
+    if (editando?.id === mov.id) setEditando(null);
+    cargarDatos();
+  }
+
   if (!autorizado) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4 text-slate-950">
@@ -608,6 +626,13 @@ export default function CuentaCorrientePage() {
                               >
                                 Cancelar
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => eliminarMovimiento(mov)}
+                                className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                              >
+                                Eliminar movimiento
+                              </button>
                             </div>
                           </form>
                         ) : (
@@ -623,6 +648,13 @@ export default function CuentaCorrientePage() {
                                 className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-black"
                               >
                                 Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => eliminarMovimiento(mov)}
+                                className="ml-2 mt-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-black text-white"
+                              >
+                                Eliminar
                               </button>
                             </div>
                             <strong className={Number(mov.monto) >= 0 ? "text-red-700" : "text-green-700"}>
