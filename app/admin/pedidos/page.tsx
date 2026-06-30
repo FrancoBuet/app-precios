@@ -235,6 +235,71 @@ export default function AdminPedidosPage() {
     cargarPedidos();
   }
 
+  async function enviarACuentaCorriente(pedido: Pedido) {
+    if (pedido.estado === "cuenta_corriente") {
+      alert("Este pedido ya esta cargado en cuenta corriente.");
+      return;
+    }
+
+    const nombre = (pedido.cliente_nombre || "").trim();
+    if (!nombre) {
+      alert("Este pedido no tiene nombre de cliente.");
+      return;
+    }
+
+    const confirma = window.confirm(`Pasar el pedido de ${nombre} por $ ${precio(pedido.total)} a cuenta corriente?`);
+    if (!confirma) return;
+
+    const telefonoLimpio = String(pedido.cliente_telefono || "").replace(/\D/g, "");
+    let clienteId = "";
+
+    if (telefonoLimpio) {
+      const { data } = await supabase
+        .from("clientes_cuenta_corriente")
+        .select("id")
+        .eq("telefono_normalizado", telefonoLimpio)
+        .maybeSingle();
+      if (data?.id) clienteId = data.id;
+    }
+
+    if (!clienteId) {
+      const { data, error } = await supabase
+        .from("clientes_cuenta_corriente")
+        .insert({
+          nombre,
+          telefono: pedido.cliente_telefono || null,
+          telefono_normalizado: telefonoLimpio || null,
+          direccion: pedido.direccion || null,
+        })
+        .select("id")
+        .single();
+
+      if (error || !data?.id) {
+        alert(`No se pudo crear el cliente en cuenta corriente. Detalle: ${error?.message || "sin detalle"}`);
+        return;
+      }
+      clienteId = data.id;
+    }
+
+    const detalle = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
+    const { error: movError } = await supabase.from("cuenta_corriente_movimientos").insert({
+      cliente_id: clienteId,
+      pedido_id: pedido.id,
+      tipo: "pedido",
+      detalle,
+      monto: Number(pedido.total || 0),
+    });
+
+    if (movError) {
+      alert(`No se pudo cargar la cuenta corriente. Detalle: ${movError.message}`);
+      return;
+    }
+
+    await supabase.from("pedidos").update({ estado: "cuenta_corriente" }).eq("id", pedido.id);
+    alert("Pedido agregado a cuenta corriente.");
+    cargarPedidos();
+  }
+
   async function imprimirPedido(pedido: Pedido) {
     const ventana = window.open("", "_blank", "width=380,height=640");
     if (!ventana) {
@@ -348,6 +413,12 @@ export default function AdminPedidosPage() {
             />
             Imprimir nuevos automaticamente
           </label>
+          <a
+            href="/admin/cuenta-corriente"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
+          >
+            Cuenta corriente
+          </a>
           <button
             type="button"
             onClick={salirAdmin}
@@ -479,6 +550,13 @@ export default function AdminPedidosPage() {
                     className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black"
                   >
                     Marcar impreso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => enviarACuentaCorriente(pedido)}
+                    className="rounded-xl bg-amber-500 px-4 py-3 font-black text-white"
+                  >
+                    Cuenta corriente
                   </button>
                   <button
                     type="button"
