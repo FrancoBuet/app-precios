@@ -41,6 +41,28 @@ function normalizarTelefono(telefono: string) {
   return telefono.replace(/\D/g, "");
 }
 
+function leerMonto(texto: string) {
+  const limpio = texto.trim().replace(/\s/g, "");
+  if (!limpio) return Number.NaN;
+
+  const tieneComa = limpio.includes(",");
+  const tienePunto = limpio.includes(".");
+
+  if (tieneComa && tienePunto) {
+    return Number(limpio.replace(/\./g, "").replace(",", "."));
+  }
+
+  if (tienePunto) {
+    const partes = limpio.split(".");
+    const ultimo = partes[partes.length - 1];
+    if (ultimo.length === 3 && partes.length > 1) {
+      return Number(partes.join(""));
+    }
+  }
+
+  return Number(limpio.replace(",", "."));
+}
+
 export default function CuentaCorrientePage() {
   const [clientes, setClientes] = useState<ClienteCuenta[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoCuenta[]>([]);
@@ -57,6 +79,12 @@ export default function CuentaCorrientePage() {
     monto: "",
     detalle: "",
   });
+  const [editando, setEditando] = useState<{
+    id: string;
+    tipo: MovimientoTipo;
+    monto: string;
+    detalle: string;
+  } | null>(null);
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -149,7 +177,7 @@ export default function CuentaCorrientePage() {
     event.preventDefault();
     if (!clienteSeleccionado) return;
 
-    const valor = Number(movimiento.monto.replace(",", "."));
+    const valor = leerMonto(movimiento.monto);
     if (!Number.isFinite(valor) || valor <= 0) {
       alert("Agrega un monto valido.");
       return;
@@ -173,6 +201,48 @@ export default function CuentaCorrientePage() {
     }
 
     setMovimiento({ tipo: "pago", monto: "", detalle: "" });
+    cargarDatos();
+  }
+
+  function iniciarEdicion(mov: MovimientoCuenta) {
+    setEditando({
+      id: mov.id,
+      tipo: mov.tipo,
+      monto: precio(Math.abs(Number(mov.monto || 0))),
+      detalle: mov.detalle,
+    });
+  }
+
+  async function guardarEdicion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editando) return;
+
+    const valor = leerMonto(editando.monto);
+    if (!Number.isFinite(valor) || valor <= 0) {
+      alert("Agrega un monto valido.");
+      return;
+    }
+
+    const montoFinal = editando.tipo === "pago" ? -Math.abs(valor) : Math.abs(valor);
+    const detalle =
+      editando.detalle.trim() ||
+      (editando.tipo === "pago" ? "Pago recibido" : editando.tipo === "ajuste" ? "Ajuste manual" : "Deuda manual");
+
+    const { error } = await supabase
+      .from("cuenta_corriente_movimientos")
+      .update({
+        tipo: editando.tipo,
+        detalle,
+        monto: montoFinal,
+      })
+      .eq("id", editando.id);
+
+    if (error) {
+      alert(`No se pudo editar el movimiento. Detalle: ${error.message}`);
+      return;
+    }
+
+    setEditando(null);
     cargarDatos();
   }
 
@@ -363,16 +433,74 @@ export default function CuentaCorrientePage() {
                     <p className="font-bold">Este cliente todavia no tiene movimientos.</p>
                   ) : (
                     clienteSeleccionado.movimientos.map((mov) => (
-                      <div key={mov.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200 p-3">
-                        <div>
-                          <p className="m-0 font-black">{mov.detalle}</p>
-                          <p className="m-0 text-sm text-slate-600">
-                            {new Date(mov.created_at).toLocaleString("es-AR")} - {mov.tipo}
-                          </p>
-                        </div>
-                        <strong className={Number(mov.monto) >= 0 ? "text-red-700" : "text-green-700"}>
-                          {Number(mov.monto) >= 0 ? "+" : "-"} $ {precio(Math.abs(Number(mov.monto)))}
-                        </strong>
+                      <div key={mov.id} className="rounded-xl border border-slate-200 p-3">
+                        {editando?.id === mov.id ? (
+                          <form onSubmit={guardarEdicion} className="grid gap-3">
+                            <div className="grid gap-3 md:grid-cols-[160px_1fr_1fr]">
+                              <select
+                                value={editando.tipo}
+                                onChange={(event) =>
+                                  setEditando((actual) =>
+                                    actual ? { ...actual, tipo: event.target.value as MovimientoTipo } : actual
+                                  )
+                                }
+                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                              >
+                                <option value="pago">Pago</option>
+                                <option value="pedido">Deuda</option>
+                                <option value="ajuste">Ajuste suma</option>
+                              </select>
+                              <input
+                                value={editando.monto}
+                                onChange={(event) =>
+                                  setEditando((actual) => (actual ? { ...actual, monto: event.target.value } : actual))
+                                }
+                                placeholder="Monto"
+                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                                autoFocus
+                              />
+                              <input
+                                value={editando.detalle}
+                                onChange={(event) =>
+                                  setEditando((actual) => (actual ? { ...actual, detalle: event.target.value } : actual))
+                                }
+                                placeholder="Detalle"
+                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                              />
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+                                Guardar cambios
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditando(null)}
+                                className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="m-0 font-black">{mov.detalle}</p>
+                              <p className="m-0 text-sm text-slate-600">
+                                {new Date(mov.created_at).toLocaleString("es-AR")} - {mov.tipo}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => iniciarEdicion(mov)}
+                                className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-black"
+                              >
+                                Editar
+                              </button>
+                            </div>
+                            <strong className={Number(mov.monto) >= 0 ? "text-red-700" : "text-green-700"}>
+                              {Number(mov.monto) >= 0 ? "+" : "-"} $ {precio(Math.abs(Number(mov.monto)))}
+                            </strong>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
