@@ -4,7 +4,7 @@ const WHATSAPP_NEGOCIO = "5493496550978";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const COSTO_ENVIO = 1500;
-const PEDIDO_SCRIPT_VERSION = "admin-envio-toggle-1";
+const PEDIDO_SCRIPT_VERSION = "datos-obligatorios-1";
 
 export default function PedidoPage() {
   const pedidoScriptSrc = `/pedido.js?whatsapp=${WHATSAPP_NEGOCIO}&envio=${COSTO_ENVIO}&supabaseUrl=${encodeURIComponent(
@@ -385,9 +385,9 @@ export default function PedidoPage() {
             <strong id="total">$0</strong>
           </div>
 
-          <input id="nombre" placeholder="Nombre" />
-          <input id="telefono" placeholder="Telefono" />
-          <textarea id="direccion" placeholder="Direccion de entrega" />
+          <input id="nombre" placeholder="Nombre" required />
+          <input id="telefono" placeholder="Telefono" required />
+          <textarea id="direccion" placeholder="Direccion de entrega" required />
           <textarea id="notas" placeholder="Aclaraciones" />
 
           <button id="imprimir" type="button" className="imprimir" disabled hidden>

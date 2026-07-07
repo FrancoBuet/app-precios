@@ -414,6 +414,28 @@
     };
   }
 
+  function camposPedidoFaltantes() {
+    const campos = [
+      { id: "nombre", nombre: "nombre" },
+      { id: "telefono", nombre: "telefono" },
+      { id: "direccion", nombre: "direccion de entrega" },
+    ];
+
+    return campos.filter((campo) => !$(campo.id)?.value.trim());
+  }
+
+  function validarDatosPedido() {
+    const faltantes = camposPedidoFaltantes();
+    if (faltantes.length === 0) return true;
+
+    const nombres = faltantes.map((campo) => campo.nombre).join(", ");
+    mostrarMensaje(`Para enviar el pedido completa estos datos: ${nombres}.`, "aviso");
+    alert(`Para enviar el pedido completa estos datos: ${nombres}.`);
+    const primerCampo = $(faltantes[0].id);
+    if (primerCampo) primerCampo.focus();
+    return false;
+  }
+
   function crearUrlWhatsApp() {
     return `https://wa.me/${WHATSAPP_NEGOCIO}?text=${encodeURIComponent(armarMensaje())}`;
   }
@@ -552,6 +574,13 @@
       return;
     }
 
+    if (camposPedidoFaltantes().length > 0) {
+      enviar.setAttribute("href", "#");
+      enviar.textContent = "Completa nombre, telefono y direccion";
+      mostrarMensaje("", "aviso");
+      return;
+    }
+
     enviar.setAttribute("href", crearUrlWhatsApp());
     enviar.textContent = "Enviar pedido por WhatsApp";
     mostrarLinkWhatsApp(crearUrlWhatsApp());
@@ -591,6 +620,10 @@
 
     if (Object.values(carrito).length === 0) {
       mostrarMensaje("Agrega al menos un producto antes de enviar.", "aviso");
+      return;
+    }
+
+    if (!validarDatosPedido()) {
       return;
     }
 
