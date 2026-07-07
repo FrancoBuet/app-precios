@@ -63,6 +63,50 @@ function mapsUrl(direccion: string | null | undefined) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(texto)}`;
 }
 
+function direccionParaMaps(direccion: string | null | undefined) {
+  return `${direccion || ""}, Esperanza, Santa Fe, Argentina`;
+}
+
+function normalizarDireccion(direccion: string | null | undefined) {
+  return String(direccion || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function claveOrdenDireccion(pedido: Pedido) {
+  const direccion = normalizarDireccion(pedido.direccion);
+  const numero = Number(direccion.match(/\d+/)?.[0] || 0);
+  const calle = direccion.replace(/\d+/g, "").trim();
+  return `${calle.padEnd(40, " ")}-${String(numero).padStart(6, "0")}`;
+}
+
+function recorridoMapsUrl(pedidos: Pedido[]) {
+  const direcciones = pedidos
+    .map((pedido) => pedido.direccion)
+    .filter((direccion): direccion is string => Boolean(direccion?.trim()))
+    .slice(0, 10)
+    .map(direccionParaMaps);
+
+  if (direcciones.length === 0) return "https://www.google.com/maps";
+  if (direcciones.length === 1) return mapsUrl(direcciones[0]);
+
+  const origen = direcciones[0];
+  const destino = direcciones[direcciones.length - 1];
+  const waypoints = direcciones.slice(1, -1).join("|");
+  const params = new URLSearchParams({
+    api: "1",
+    origin: origen,
+    destination: destino,
+    travelmode: "driving",
+  });
+  if (waypoints) params.set("waypoints", waypoints);
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
 export default function RepartoPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -70,8 +114,9 @@ export default function RepartoPage() {
   const [autorizado, setAutorizado] = useState(false);
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
-  const [filtro, setFiltro] = useState<"pendientes" | "todos">("pendientes");
+  const [filtro, setFiltro] = useState<"pendientes" | "entregados">("pendientes");
   const [busqueda, setBusqueda] = useState("");
+  const [ordenarPorDireccion, setOrdenarPorDireccion] = useState(false);
   const [notas, setNotas] = useState<Record<string, string>>({});
 
   const cargarPedidos = useCallback(async () => {
@@ -113,10 +158,10 @@ export default function RepartoPage() {
 
   const pedidosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
-    return pedidos
+    const lista = pedidos
       .filter((pedido) => {
-        if (filtro === "todos") return true;
-        return (pedido.estado_reparto || "pendiente") !== "entregado";
+        const entregado = (pedido.estado_reparto || "pendiente") === "entregado";
+        return filtro === "entregados" ? entregado : !entregado;
       })
       .filter((pedido) => {
         const items = (pedido.items || []).map((item) => `${item.texto || ""} ${item.nombre || ""}`).join(" ");
@@ -125,7 +170,19 @@ export default function RepartoPage() {
         } ${pedido.notas || ""} ${items}`.toLowerCase();
         return texto.includes(termino);
       });
-  }, [pedidos, filtro, busqueda]);
+
+    if (!ordenarPorDireccion) return lista;
+    return lista.slice().sort((a, b) => claveOrdenDireccion(a).localeCompare(claveOrdenDireccion(b)));
+  }, [pedidos, filtro, busqueda, ordenarPorDireccion]);
+
+  const pendientesOrdenados = useMemo(
+    () =>
+      pedidos
+        .filter((pedido) => (pedido.estado_reparto || "pendiente") !== "entregado")
+        .slice()
+        .sort((a, b) => claveOrdenDireccion(a).localeCompare(claveOrdenDireccion(b))),
+    [pedidos]
+  );
 
   const totalEfectivo = pedidos
     .filter((pedido) => pedido.forma_pago === "efectivo" && pedido.estado_reparto === "entregado")
@@ -234,10 +291,10 @@ export default function RepartoPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setFiltro("todos")}
-                className={`rounded-xl px-3 py-3 font-black ${filtro === "todos" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
+                onClick={() => setFiltro("entregados")}
+                className={`rounded-xl px-3 py-3 font-black ${filtro === "entregados" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
               >
-                Todos
+                Entregados
               </button>
             </div>
             <input
@@ -246,9 +303,31 @@ export default function RepartoPage() {
               placeholder="Buscar nombre, direccion o producto"
               className="w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
             />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setOrdenarPorDireccion((actual) => !actual)}
+                className={`rounded-xl px-4 py-3 font-black ${
+                  ordenarPorDireccion ? "bg-blue-600 text-white" : "border border-slate-300 bg-white"
+                }`}
+              >
+                Ordenar por direccion
+              </button>
+              <a
+                href={recorridoMapsUrl(pendientesOrdenados)}
+                target="_blank"
+                rel="noopener"
+                className="rounded-xl bg-blue-600 px-4 py-3 text-center font-black text-white"
+              >
+                Abrir recorrido
+              </a>
+            </div>
             <button type="button" onClick={cargarPedidos} className="rounded-xl bg-slate-950 px-4 py-3 font-black text-white">
               Actualizar
             </button>
+            <p className="m-0 text-xs font-bold text-slate-500">
+              Maps permite armar recorrido con hasta 10 direcciones por vez. Para ordenar perfecto por distancia hace falta API de Google.
+            </p>
           </div>
         </div>
 
