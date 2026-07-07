@@ -117,10 +117,11 @@ export default function RepartoPage() {
   const [filtro, setFiltro] = useState<"pendientes" | "entregados">("pendientes");
   const [busqueda, setBusqueda] = useState("");
   const [ordenarPorDireccion, setOrdenarPorDireccion] = useState(false);
+  const [hayActualizacion, setHayActualizacion] = useState(false);
   const [notas, setNotas] = useState<Record<string, string>>({});
 
-  const cargarPedidos = useCallback(async () => {
-    setCargando(true);
+  const cargarPedidos = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCargando(true);
     const { data, error } = await supabase
       .from("pedidos")
       .select("*")
@@ -135,6 +136,7 @@ export default function RepartoPage() {
       const lista = (data || []) as Pedido[];
       setErrorCarga("");
       setPedidos(lista);
+      setHayActualizacion(false);
       setNotas(
         lista.reduce<Record<string, string>>((acc, pedido) => {
           acc[pedido.id] = pedido.nota_reparto || "";
@@ -142,7 +144,7 @@ export default function RepartoPage() {
         }, {})
       );
     }
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }, []);
 
   useEffect(() => {
@@ -152,7 +154,13 @@ export default function RepartoPage() {
   useEffect(() => {
     if (!autorizado) return;
     cargarPedidos();
-    const timer = window.setInterval(cargarPedidos, 15000);
+    const timer = window.setInterval(() => {
+      if (window.scrollY < 120) {
+        cargarPedidos(true);
+      } else {
+        setHayActualizacion(true);
+      }
+    }, 30000);
     return () => window.clearInterval(timer);
   }, [autorizado, cargarPedidos]);
 
@@ -220,7 +228,7 @@ export default function RepartoPage() {
       alert(`No se pudo actualizar el pedido. Detalle: ${error.message}`);
       return;
     }
-    cargarPedidos();
+    cargarPedidos(true);
   }
 
   function marcarEntregado(pedido: Pedido, forma_pago: FormaPago) {
@@ -255,44 +263,44 @@ export default function RepartoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-3 text-slate-950">
+    <main className="min-h-screen bg-slate-100 p-2 text-slate-950">
       <section className="mx-auto max-w-3xl">
-        <div className="sticky top-0 z-10 -mx-3 mb-3 bg-slate-100 px-3 pb-3 pt-2">
-          <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="mb-3">
+          <div className="mb-2 flex items-start justify-between gap-2">
             <div>
-              <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
-              <h1 className="m-0 text-3xl font-black">Reparto</h1>
-              <p className="m-0 text-sm font-bold text-slate-600">Pedidos de hoy</p>
+              <p className="m-0 text-sm font-black text-green-700">EL NONO COQUI</p>
+              <h1 className="m-0 text-2xl font-black leading-tight">Reparto</h1>
+              <p className="m-0 text-xs font-bold text-slate-600">Pedidos de hoy</p>
             </div>
-            <button type="button" onClick={salir} className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow">
+            <button type="button" onClick={salir} className="rounded-xl border border-slate-300 bg-white px-3 py-2 font-black shadow">
               Salir
             </button>
           </div>
 
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-white p-3 shadow">
-              <p className="m-0 text-sm font-bold text-slate-600">Pendientes</p>
-              <strong className="text-2xl">{pendientes}</strong>
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-white p-2 shadow">
+              <p className="m-0 text-xs font-bold text-slate-600">Pendientes</p>
+              <strong className="text-xl">{pendientes}</strong>
             </div>
-            <div className="rounded-2xl bg-white p-3 shadow">
-              <p className="m-0 text-sm font-bold text-slate-600">Efectivo a rendir</p>
-              <strong className="text-2xl">$ {precio(totalEfectivo)}</strong>
+            <div className="rounded-xl bg-white p-2 shadow">
+              <p className="m-0 text-xs font-bold text-slate-600">Efectivo</p>
+              <strong className="text-xl">$ {precio(totalEfectivo)}</strong>
             </div>
           </div>
 
-          <div className="grid gap-2 rounded-2xl bg-white p-3 shadow">
+          <div className="grid gap-2 rounded-xl bg-white p-2 shadow">
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setFiltro("pendientes")}
-                className={`rounded-xl px-3 py-3 font-black ${filtro === "pendientes" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
+                className={`rounded-xl px-3 py-2 font-black ${filtro === "pendientes" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
               >
                 Pendientes
               </button>
               <button
                 type="button"
                 onClick={() => setFiltro("entregados")}
-                className={`rounded-xl px-3 py-3 font-black ${filtro === "entregados" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
+                className={`rounded-xl px-3 py-2 font-black ${filtro === "entregados" ? "bg-green-600 text-white" : "border border-slate-300 bg-white"}`}
               >
                 Entregados
               </button>
@@ -301,35 +309,45 @@ export default function RepartoPage() {
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
               placeholder="Buscar nombre, direccion o producto"
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 font-bold"
             />
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setOrdenarPorDireccion((actual) => !actual)}
-                className={`rounded-xl px-4 py-3 font-black ${
+                className={`rounded-xl px-3 py-2 font-black ${
                   ordenarPorDireccion ? "bg-blue-600 text-white" : "border border-slate-300 bg-white"
                 }`}
               >
-                Ordenar por direccion
+                Ordenar dir.
               </button>
               <a
                 href={recorridoMapsUrl(pendientesOrdenados)}
                 target="_blank"
                 rel="noopener"
-                className="rounded-xl bg-blue-600 px-4 py-3 text-center font-black text-white"
+                className="rounded-xl bg-blue-600 px-3 py-2 text-center font-black text-white"
               >
-                Abrir recorrido
+                Recorrido
               </a>
             </div>
-            <button type="button" onClick={cargarPedidos} className="rounded-xl bg-slate-950 px-4 py-3 font-black text-white">
+            <button type="button" onClick={() => cargarPedidos()} className="rounded-xl bg-slate-950 px-3 py-2 font-black text-white">
               Actualizar
             </button>
-            <p className="m-0 text-xs font-bold text-slate-500">
-              Maps permite armar recorrido con hasta 10 direcciones por vez. Para ordenar perfecto por distancia hace falta API de Google.
-            </p>
           </div>
         </div>
+
+        {hayActualizacion ? (
+          <button
+            type="button"
+            onClick={() => {
+              cargarPedidos();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="mb-3 w-full rounded-xl bg-green-600 px-4 py-3 font-black text-white shadow"
+          >
+            Hay cambios nuevos - tocar para actualizar
+          </button>
+        ) : null}
 
         {cargando ? (
           <div className="rounded-2xl bg-white p-5 font-bold shadow">Cargando pedidos...</div>
