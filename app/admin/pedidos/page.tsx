@@ -443,6 +443,12 @@ export default function AdminPedidosPage() {
           >
             Cuenta corriente
           </a>
+          <a
+            href="/reparto"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
+          >
+            Reparto
+          </a>
           <button
             type="button"
             onClick={salirAdmin}
