@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
 type ItemPedido = {
@@ -59,13 +59,28 @@ function inicioDelDia(fecha: Date) {
   return inicio;
 }
 
-function inicioDelMes(fecha: Date) {
-  return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+function claveMesActual() {
+  const ahora = new Date();
+  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function etiquetaFiltro(filtro: FiltroReporte) {
+function inicioDelMesClave(clave: string) {
+  const [anio, mes] = clave.split("-").map(Number);
+  return new Date(anio, (mes || 1) - 1, 1);
+}
+
+function mesSiguiente(clave: string) {
+  const inicio = inicioDelMesClave(clave);
+  return new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
+}
+
+function nombreMes(clave: string) {
+  return inicioDelMesClave(clave).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+}
+
+function etiquetaFiltro(filtro: FiltroReporte, mes: string) {
   if (filtro === "hoy") return "Ventas de hoy";
-  if (filtro === "mes") return "Ventas de este mes";
+  if (filtro === "mes") return `Ventas de ${nombreMes(mes)}`;
   return "Historial de pedidos";
 }
 
@@ -183,6 +198,7 @@ export default function AdminPedidosPage() {
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
+  const [mesReporte, setMesReporte] = useState(claveMesActual());
   const [hayActualizacion, setHayActualizacion] = useState(false);
   const [montosVisibles, setMontosVisibles] = useState(false);
   const [busquedaPedidos, setBusquedaPedidos] = useState("");
@@ -203,7 +219,9 @@ export default function AdminPedidosPage() {
       query = query.gte("created_at", inicioDelDia(ahora).toISOString());
     }
     if (filtroReporte === "mes") {
-      query = query.gte("created_at", inicioDelMes(ahora).toISOString());
+      query = query
+        .gte("created_at", inicioDelMesClave(mesReporte).toISOString())
+        .lt("created_at", mesSiguiente(mesReporte).toISOString());
     }
 
     const { data, error } = await query;
@@ -216,7 +234,7 @@ export default function AdminPedidosPage() {
       setHayActualizacion(false);
     }
     if (!silencioso) setCargando(false);
-  }, [filtroReporte]);
+  }, [filtroReporte, mesReporte]);
 
   async function marcarImpreso(pedido: Pedido) {
     await supabase
@@ -374,8 +392,47 @@ export default function AdminPedidosPage() {
   const totalVendido = pedidos.reduce((sum, pedido) => sum + Number(pedido.total || 0), 0);
   const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
-  const textoFiltro = etiquetaFiltro(filtroReporte);
+  const textoFiltro = etiquetaFiltro(filtroReporte, mesReporte);
   const montoAdmin = (valor: number | null | undefined) => (montosVisibles ? `$ ${precio(valor)}` : "*****");
+  const clientesReporte = useMemo(() => {
+    const mapa = new Map<
+      string,
+      {
+        nombre: string;
+        telefono: string;
+        direccion: string;
+        pedidos: number;
+        total: number;
+        ultimaCompra: string;
+      }
+    >();
+
+    for (const pedido of pedidos) {
+      const nombre = (pedido.cliente_nombre || "Sin nombre").trim();
+      const telefono = String(pedido.cliente_telefono || "").replace(/\D/g, "");
+      const clave = telefono || nombre.toLowerCase();
+      const actual = mapa.get(clave) || {
+        nombre,
+        telefono: pedido.cliente_telefono || "-",
+        direccion: pedido.direccion || "-",
+        pedidos: 0,
+        total: 0,
+        ultimaCompra: pedido.created_at,
+      };
+
+      actual.pedidos += 1;
+      actual.total += Number(pedido.total || 0);
+      if (new Date(pedido.created_at) > new Date(actual.ultimaCompra)) {
+        actual.ultimaCompra = pedido.created_at;
+        actual.direccion = pedido.direccion || actual.direccion;
+      }
+      mapa.set(clave, actual);
+    }
+
+    return Array.from(mapa.values())
+      .sort((a, b) => b.total - a.total || b.pedidos - a.pedidos)
+      .slice(0, 8);
+  }, [pedidos]);
   const pedidosFiltrados = pedidos.filter((pedido) => {
     const textoItems = (pedido.items || []).map((item) => `${item.texto || ""} ${item.nombre || ""}`).join(" ");
     const texto = `
@@ -463,7 +520,7 @@ export default function AdminPedidosPage() {
             <div className="flex flex-wrap gap-2">
               {([
                 ["hoy", "Hoy"],
-                ["mes", "Este mes"],
+                ["mes", "Mes"],
                 ["todos", "Todos"],
               ] as const).map(([valor, texto]) => (
                 <button
@@ -479,6 +536,18 @@ export default function AdminPedidosPage() {
                   {texto}
                 </button>
               ))}
+              <label className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-black">
+                <span className="text-sm text-slate-600">Mes</span>
+                <input
+                  type="month"
+                  value={mesReporte}
+                  onChange={(event) => {
+                    setMesReporte(event.target.value || claveMesActual());
+                    setFiltroReporte("mes");
+                  }}
+                  className="bg-transparent font-black outline-none"
+                />
+              </label>
             </div>
             <button
               type="button"
@@ -510,6 +579,37 @@ export default function AdminPedidosPage() {
           <p className="m-0 text-sm font-bold text-slate-600">
             Envios cobrados: {montoAdmin(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
           </p>
+          {clientesReporte.length > 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-3">
+              <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h2 className="m-0 text-lg font-black">Clientes del periodo</h2>
+                  <p className="m-0 text-sm font-bold text-slate-600">Ordenados por mayor compra</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-700">
+                  Top {clientesReporte.length}
+                </span>
+              </div>
+              <div className="grid gap-2">
+                {clientesReporte.map((cliente, index) => (
+                  <div
+                    key={`${cliente.telefono}-${cliente.nombre}-${index}`}
+                    className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[2rem_1fr_auto]"
+                  >
+                    <strong className="text-lg">#{index + 1}</strong>
+                    <div>
+                      <p className="m-0 font-black">{cliente.nombre}</p>
+                      <p className="m-0 text-sm font-bold text-slate-600">
+                        {cliente.pedidos} pedido{cliente.pedidos === 1 ? "" : "s"} - Tel: {cliente.telefono}
+                      </p>
+                      <p className="m-0 text-sm text-slate-600">Dir: {cliente.direccion}</p>
+                    </div>
+                    <strong className="text-lg text-green-700">{montoAdmin(cliente.total)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <input
             value={busquedaPedidos}
             onChange={(event) => setBusquedaPedidos(event.target.value)}
