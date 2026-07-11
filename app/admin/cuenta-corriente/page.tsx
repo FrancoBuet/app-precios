@@ -73,6 +73,7 @@ export default function CuentaCorrientePage() {
   const [errorPin, setErrorPin] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [clienteActivo, setClienteActivo] = useState<string>("");
+  const [mostrarNuevoCliente, setMostrarNuevoCliente] = useState(false);
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: "", telefono: "", direccion: "", notas: "" });
   const [movimiento, setMovimiento] = useState<{ tipo: MovimientoTipo; monto: string; detalle: string }>({
     tipo: "pago",
@@ -365,36 +366,48 @@ export default function CuentaCorrientePage() {
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-950">
       <section className="mx-auto max-w-6xl">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
-            <h1 className="m-0 text-3xl font-black">Cuenta corriente</h1>
-            <p className="m-0 text-sm font-bold text-slate-600">Clientes, deudas y pagos</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a href="/admin/pedidos" className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow">
-              Pedidos
-            </a>
-            <button
-              type="button"
-              onClick={cargarDatos}
-              className="rounded-xl bg-slate-950 px-4 py-3 font-black text-white shadow"
-            >
-              Actualizar
-            </button>
+        <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="m-0 text-sm font-black uppercase tracking-wide text-green-700">EL NONO COQUI</p>
+              <h1 className="m-0 text-3xl font-black leading-tight">Cuenta corriente</h1>
+              <p className="m-0 text-sm font-bold text-slate-600">Clientes, deudas y pagos</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setMostrarNuevoCliente((visible) => !visible)}
+                className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm"
+              >
+                Nuevo cliente
+              </button>
+              <a
+                href="/admin/pedidos"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black shadow-sm"
+              >
+                Pedidos
+              </a>
+              <button
+                type="button"
+                onClick={cargarDatos}
+                className="rounded-2xl bg-slate-950 px-4 py-3 font-black text-white shadow-sm"
+              >
+                Actualizar
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-4 shadow">
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <p className="m-0 text-sm font-bold text-slate-600">Clientes</p>
             <strong className="text-2xl">{clientesConSaldo.length}</strong>
           </div>
-          <div className="rounded-2xl bg-white p-4 shadow">
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <p className="m-0 text-sm font-bold text-slate-600">Total a cobrar</p>
-            <strong className="text-2xl">$ {precio(totalDeuda)}</strong>
+            <strong className="text-2xl text-red-700">$ {precio(totalDeuda)}</strong>
           </div>
-          <div className="rounded-2xl bg-white p-4 shadow">
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <p className="m-0 text-sm font-bold text-slate-600">Movimientos</p>
             <strong className="text-2xl">{movimientos.length}</strong>
           </div>
@@ -406,46 +419,57 @@ export default function CuentaCorrientePage() {
           </div>
         ) : null}
 
-        <form onSubmit={crearCliente} className="mb-4 grid gap-3 rounded-2xl bg-white p-4 shadow">
-          <h2 className="m-0 text-xl font-black">Agregar cliente</h2>
-          <div className="grid gap-3 md:grid-cols-4">
-            <input
-              value={nuevoCliente.nombre}
-              onChange={(event) => setNuevoCliente((actual) => ({ ...actual, nombre: event.target.value }))}
-              placeholder="Nombre"
-              className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
-            />
-            <input
-              value={nuevoCliente.telefono}
-              onChange={(event) => setNuevoCliente((actual) => ({ ...actual, telefono: event.target.value }))}
-              placeholder="Telefono"
-              className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
-            />
-            <input
-              value={nuevoCliente.direccion}
-              onChange={(event) => setNuevoCliente((actual) => ({ ...actual, direccion: event.target.value }))}
-              placeholder="Direccion"
-              className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
-            />
-            <input
-              value={nuevoCliente.notas}
-              onChange={(event) => setNuevoCliente((actual) => ({ ...actual, notas: event.target.value }))}
-              placeholder="Notas"
-              className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
-            />
-          </div>
-          <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
-            Crear cliente
-          </button>
-        </form>
+        {mostrarNuevoCliente ? (
+          <form onSubmit={crearCliente} className="mb-4 grid gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="m-0 text-xl font-black">Nuevo cliente</h2>
+              <button
+                type="button"
+                onClick={() => setMostrarNuevoCliente(false)}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 font-black"
+              >
+                Cerrar
+              </button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <input
+                value={nuevoCliente.nombre}
+                onChange={(event) => setNuevoCliente((actual) => ({ ...actual, nombre: event.target.value }))}
+                placeholder="Nombre"
+                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
+              />
+              <input
+                value={nuevoCliente.telefono}
+                onChange={(event) => setNuevoCliente((actual) => ({ ...actual, telefono: event.target.value }))}
+                placeholder="Telefono"
+                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
+              />
+              <input
+                value={nuevoCliente.direccion}
+                onChange={(event) => setNuevoCliente((actual) => ({ ...actual, direccion: event.target.value }))}
+                placeholder="Direccion"
+                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
+              />
+              <input
+                value={nuevoCliente.notas}
+                onChange={(event) => setNuevoCliente((actual) => ({ ...actual, notas: event.target.value }))}
+                placeholder="Notas"
+                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
+              />
+            </div>
+            <button type="submit" className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm">
+              Crear cliente
+            </button>
+          </form>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <aside className="rounded-2xl bg-white p-4 shadow">
+          <aside className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <input
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
               placeholder="Buscar cliente"
-              className="mb-3 w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
+              className="mb-3 w-full rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
             />
             {cargando ? (
               <p className="font-bold">Cargando...</p>
@@ -458,25 +482,27 @@ export default function CuentaCorrientePage() {
                     key={cliente.id}
                     type="button"
                     onClick={() => setClienteActivo(cliente.id)}
-                    className={`rounded-xl border px-3 py-3 text-left font-bold ${
+                    className={`rounded-2xl border px-3 py-3 text-left font-bold transition ${
                       clienteSeleccionado?.id === cliente.id
-                        ? "border-green-600 bg-green-50"
-                        : "border-slate-200 bg-white"
+                        ? "border-green-600 bg-green-50 shadow-sm"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
                   >
-                    <span className="block text-base">{cliente.nombre}</span>
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="text-base">{cliente.nombre}</span>
+                      <span className={`text-base ${cliente.saldo > 0 ? "text-red-700" : "text-green-700"}`}>
+                        $ {precio(cliente.saldo)}
+                      </span>
+                    </span>
                     <span className="block text-sm text-slate-600">{cliente.telefono || "Sin telefono"}</span>
                     {cliente.notas ? <span className="block text-xs text-slate-500">{cliente.notas}</span> : null}
-                    <span className={`block text-lg ${cliente.saldo > 0 ? "text-red-700" : "text-green-700"}`}>
-                      $ {precio(cliente.saldo)}
-                    </span>
                   </button>
                 ))}
               </div>
             )}
           </aside>
 
-          <section className="rounded-2xl bg-white p-4 shadow">
+          <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             {clienteSeleccionado ? (
               <>
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b pb-3">
@@ -494,7 +520,7 @@ export default function CuentaCorrientePage() {
                   </strong>
                 </div>
 
-                <form onSubmit={guardarCliente} className="mb-4 grid gap-3 rounded-xl bg-white p-3 ring-1 ring-slate-200">
+                <form onSubmit={guardarCliente} className="mb-4 grid gap-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
                   <h3 className="m-0 text-lg font-black">Datos del cliente</h3>
                   <div className="grid gap-3 md:grid-cols-2">
                     <input
@@ -503,7 +529,7 @@ export default function CuentaCorrientePage() {
                         setEditandoCliente((actual) => ({ ...actual, nombre: event.target.value }))
                       }
                       placeholder="Nombre"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                     <input
                       value={editandoCliente.telefono}
@@ -511,7 +537,7 @@ export default function CuentaCorrientePage() {
                         setEditandoCliente((actual) => ({ ...actual, telefono: event.target.value }))
                       }
                       placeholder="Telefono"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                     <input
                       value={editandoCliente.direccion}
@@ -519,7 +545,7 @@ export default function CuentaCorrientePage() {
                         setEditandoCliente((actual) => ({ ...actual, direccion: event.target.value }))
                       }
                       placeholder="Direccion"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                     <input
                       value={editandoCliente.notas}
@@ -527,31 +553,31 @@ export default function CuentaCorrientePage() {
                         setEditandoCliente((actual) => ({ ...actual, notas: event.target.value }))
                       }
                       placeholder="Notas"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+                    <button type="submit" className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm">
                       Guardar cliente
                     </button>
                     <button
                       type="button"
                       onClick={eliminarCliente}
-                      className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                      className="rounded-2xl bg-red-600 px-4 py-3 font-black text-white shadow-sm"
                     >
                       Eliminar cliente
                     </button>
                   </div>
                 </form>
 
-                <form onSubmit={agregarMovimiento} className="mb-4 grid gap-3 rounded-xl bg-slate-100 p-3">
+                <form onSubmit={agregarMovimiento} className="mb-4 grid gap-3 rounded-2xl bg-slate-100 p-3">
                   <div className="grid gap-3 md:grid-cols-[160px_1fr_1fr]">
                     <select
                       value={movimiento.tipo}
                       onChange={(event) =>
                         setMovimiento((actual) => ({ ...actual, tipo: event.target.value as MovimientoTipo }))
                       }
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     >
                       <option value="pago">Pago</option>
                       <option value="pedido">Deuda</option>
@@ -561,16 +587,16 @@ export default function CuentaCorrientePage() {
                       value={movimiento.monto}
                       onChange={(event) => setMovimiento((actual) => ({ ...actual, monto: event.target.value }))}
                       placeholder="Monto"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                     <input
                       value={movimiento.detalle}
                       onChange={(event) => setMovimiento((actual) => ({ ...actual, detalle: event.target.value }))}
                       placeholder="Detalle"
-                      className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                      className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                     />
                   </div>
-                  <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+                  <button type="submit" className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm">
                     Guardar movimiento
                   </button>
                 </form>
@@ -580,7 +606,7 @@ export default function CuentaCorrientePage() {
                     <p className="font-bold">Este cliente todavia no tiene movimientos.</p>
                   ) : (
                     clienteSeleccionado.movimientos.map((mov) => (
-                      <div key={mov.id} className="rounded-xl border border-slate-200 p-3">
+                      <div key={mov.id} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                         {editando?.id === mov.id ? (
                           <form onSubmit={guardarEdicion} className="grid gap-3">
                             <div className="grid gap-3 md:grid-cols-[160px_1fr_1fr]">
@@ -591,7 +617,7 @@ export default function CuentaCorrientePage() {
                                     actual ? { ...actual, tipo: event.target.value as MovimientoTipo } : actual
                                   )
                                 }
-                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                               >
                                 <option value="pago">Pago</option>
                                 <option value="pedido">Deuda</option>
@@ -603,7 +629,7 @@ export default function CuentaCorrientePage() {
                                   setEditando((actual) => (actual ? { ...actual, monto: event.target.value } : actual))
                                 }
                                 placeholder="Monto"
-                                className="rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                                className="rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                                 autoFocus
                               />
                               <textarea
@@ -612,24 +638,24 @@ export default function CuentaCorrientePage() {
                                   setEditando((actual) => (actual ? { ...actual, detalle: event.target.value } : actual))
                                 }
                                 placeholder="Detalle"
-                                className="min-h-28 rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                                className="min-h-28 rounded-2xl border border-slate-300 px-4 py-3 font-bold outline-none focus:border-green-600"
                               />
                             </div>
                             <div className="flex flex-wrap gap-2">
-                              <button type="submit" className="rounded-xl bg-green-600 px-4 py-3 font-black text-white">
+                              <button type="submit" className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white">
                                 Guardar cambios
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setEditando(null)}
-                                className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black"
+                                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black"
                               >
                                 Cancelar
                               </button>
                               <button
                                 type="button"
                                 onClick={() => eliminarMovimiento(mov)}
-                                className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                                className="rounded-2xl bg-red-600 px-4 py-3 font-black text-white"
                               >
                                 Eliminar movimiento
                               </button>
@@ -637,27 +663,42 @@ export default function CuentaCorrientePage() {
                           </form>
                         ) : (
                           <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <p className="m-0 whitespace-pre-line font-black">{mov.detalle}</p>
-                              <p className="m-0 text-sm text-slate-600">
-                                {new Date(mov.created_at).toLocaleString("es-AR")} - {mov.tipo}
-                              </p>
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-black ${
+                                    mov.tipo === "pago"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {mov.tipo === "pago" ? "Pago" : mov.tipo === "ajuste" ? "Ajuste" : "Deuda"}
+                                </span>
+                                <span className="text-sm font-bold text-slate-500">
+                                  {new Date(mov.created_at).toLocaleString("es-AR")}
+                                </span>
+                              </div>
+                              <p className="m-0 whitespace-pre-line break-words font-black leading-snug">{mov.detalle}</p>
                               <button
                                 type="button"
                                 onClick={() => iniciarEdicion(mov)}
-                                className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-black"
+                                className="mt-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black"
                               >
                                 Editar
                               </button>
                               <button
                                 type="button"
                                 onClick={() => eliminarMovimiento(mov)}
-                                className="ml-2 mt-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-black text-white"
+                                className="ml-2 mt-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white"
                               >
                                 Eliminar
                               </button>
                             </div>
-                            <strong className={Number(mov.monto) >= 0 ? "text-red-700" : "text-green-700"}>
+                            <strong
+                              className={`rounded-2xl px-3 py-2 text-lg ${
+                                Number(mov.monto) >= 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
+                              }`}
+                            >
                               {Number(mov.monto) >= 0 ? "+" : "-"} $ {precio(Math.abs(Number(mov.monto)))}
                             </strong>
                           </div>
