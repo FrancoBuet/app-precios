@@ -200,6 +200,7 @@ export default function AdminPedidosPage() {
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
   const [vistaReporte, setVistaReporte] = useState<VistaReporte>("pedidos");
   const [mesReporte, setMesReporte] = useState(claveMesActual());
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [hayActualizacion, setHayActualizacion] = useState(false);
   const [montosVisibles, setMontosVisibles] = useState(false);
   const [busquedaPedidos, setBusquedaPedidos] = useState("");
@@ -379,6 +380,9 @@ export default function AdminPedidosPage() {
   const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
   const textoFiltro = etiquetaFiltro(filtroReporte, mesReporte);
+  const resumenFiltros = `${vistaReporte === "clientes" ? "Top clientes" : "Pedidos"} · ${
+    filtroReporte === "hoy" ? "Hoy" : filtroReporte === "mes" ? nombreMes(mesReporte) : "Todos"
+  }`;
   const montoAdmin = (valor: number | null | undefined) => (montosVisibles ? `$ ${precio(valor)}` : "*****");
   const clientesReporte = useMemo(() => {
     const mapa = new Map<
@@ -499,54 +503,17 @@ export default function AdminPedidosPage() {
 
         <div className="mb-4 grid gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
-              {([
-                ["pedidos", "Pedidos"],
-                ["clientes", "Top clientes"],
-              ] as const).map(([valor, texto]) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => setVistaReporte(valor)}
-                  className={`rounded-2xl px-4 py-3 font-black ${
-                    vistaReporte === valor
-                      ? "bg-slate-950 text-white"
-                      : "border border-slate-300 bg-white text-slate-950"
-                  }`}
-                >
-                  {texto}
-                </button>
-              ))}
-              {([
-                ["hoy", "Hoy"],
-                ["mes", "Mes"],
-                ["todos", "Todos"],
-              ] as const).map(([valor, texto]) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => setFiltroReporte(valor)}
-                  className={`rounded-2xl px-4 py-3 font-black ${
-                    filtroReporte === valor
-                      ? "bg-green-600 text-white"
-                      : "border border-slate-300 bg-white text-slate-950"
-                  }`}
-                >
-                  {texto}
-                </button>
-              ))}
-              <label className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2 font-black">
-                <span className="text-sm text-slate-600">Mes</span>
-                <input
-                  type="month"
-                  value={mesReporte}
-                  onChange={(event) => {
-                    setMesReporte(event.target.value || claveMesActual());
-                    setFiltroReporte("mes");
-                  }}
-                  className="bg-transparent font-black outline-none"
-                />
-              </label>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setFiltrosAbiertos((abierto) => !abierto)}
+                className="rounded-2xl bg-slate-950 px-4 py-3 font-black text-white shadow-sm"
+              >
+                Filtros
+              </button>
+              <span className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-black text-slate-700">
+                {resumenFiltros}
+              </span>
             </div>
             <button
               type="button"
@@ -561,6 +528,69 @@ export default function AdminPedidosPage() {
               {montosVisibles ? "Ocultar montos" : "Ver montos"}
             </button>
           </div>
+          {filtrosAbiertos ? (
+            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div>
+                <p className="mb-2 mt-0 text-sm font-black text-slate-600">Reporte</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ["pedidos", "Pedidos"],
+                    ["clientes", "Top clientes"],
+                  ] as const).map(([valor, texto]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setVistaReporte(valor)}
+                      className={`rounded-2xl px-4 py-3 font-black ${
+                        vistaReporte === valor
+                          ? "bg-slate-950 text-white"
+                          : "border border-slate-300 bg-white text-slate-950"
+                      }`}
+                    >
+                      {vistaReporte === valor ? "✓ " : ""}
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 mt-0 text-sm font-black text-slate-600">Periodo</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    ["hoy", "Hoy"],
+                    ["mes", "Mes"],
+                    ["todos", "Todos"],
+                  ] as const).map(([valor, texto]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setFiltroReporte(valor)}
+                      className={`rounded-2xl px-4 py-3 font-black ${
+                        filtroReporte === valor
+                          ? "bg-green-600 text-white"
+                          : "border border-slate-300 bg-white text-slate-950"
+                      }`}
+                    >
+                      {filtroReporte === valor ? "✓ " : ""}
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="grid gap-2 rounded-2xl border border-slate-300 bg-white p-3 font-black">
+                <span className="text-sm text-slate-600">Mes para reporte mensual</span>
+                <input
+                  type="month"
+                  value={mesReporte}
+                  onChange={(event) => {
+                    setMesReporte(event.target.value || claveMesActual());
+                    setFiltroReporte("mes");
+                  }}
+                  className="w-full rounded-xl bg-slate-100 px-3 py-2 font-black outline-none"
+                />
+              </label>
+            </div>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Pedidos</p>
