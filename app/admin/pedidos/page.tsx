@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 
 type ItemPedido = {
@@ -193,7 +193,6 @@ export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
-  const [autoImprimir, setAutoImprimir] = useState(false);
   const [autorizado, setAutorizado] = useState(false);
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
@@ -202,7 +201,6 @@ export default function AdminPedidosPage() {
   const [hayActualizacion, setHayActualizacion] = useState(false);
   const [montosVisibles, setMontosVisibles] = useState(false);
   const [busquedaPedidos, setBusquedaPedidos] = useState("");
-  const impresosRef = useRef<Set<string>>(new Set());
 
   const cargarPedidos = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargando(true);
@@ -259,7 +257,6 @@ export default function AdminPedidosPage() {
       return;
     }
 
-    impresosRef.current.delete(pedido.id);
     cargarPedidos();
   }
 
@@ -338,7 +335,6 @@ export default function AdminPedidosPage() {
     ventana.document.open();
     ventana.document.write(htmlTicket(pedido));
     ventana.document.close();
-    impresosRef.current.add(pedido.id);
     await marcarImpreso(pedido);
   }
 
@@ -350,26 +346,14 @@ export default function AdminPedidosPage() {
     if (!autorizado) return;
     cargarPedidos();
     const timer = window.setInterval(() => {
-      if (window.scrollY < 120 || autoImprimir) {
+      if (window.scrollY < 120) {
         cargarPedidos(true);
       } else {
         setHayActualizacion(true);
       }
     }, 6000);
     return () => window.clearInterval(timer);
-  }, [autorizado, autoImprimir, cargarPedidos]);
-
-  useEffect(() => {
-    if (!autoImprimir) return;
-    const nuevo = pedidos
-      .slice()
-      .reverse()
-      .find((pedido) => pedido.estado !== "impreso" && !pedido.impreso_at && !impresosRef.current.has(pedido.id));
-
-    if (nuevo) {
-      imprimirPedido(nuevo);
-    }
-  }, [autoImprimir, pedidos]);
+  }, [autorizado, cargarPedidos]);
 
   function ingresarAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -479,43 +463,39 @@ export default function AdminPedidosPage() {
   return (
     <main className="min-h-screen bg-slate-100 p-4 text-slate-950">
       <section className="mx-auto max-w-5xl">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="m-0 font-black text-green-700">EL NONO COQUI</p>
-            <h1 className="m-0 text-3xl font-black">Pedidos recibidos</h1>
-            <p className="m-0 text-sm font-bold text-slate-600">Pedidos nuevos arriba - {textoFiltro}</p>
-          </div>
+        <div className="mb-4 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="m-0 text-sm font-black uppercase tracking-wide text-green-700">EL NONO COQUI</p>
+              <h1 className="m-0 text-3xl font-black leading-tight">Pedidos recibidos</h1>
+              <p className="m-0 text-sm font-bold text-slate-600">Pedidos nuevos arriba - {textoFiltro}</p>
+            </div>
 
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-black shadow">
-            <input
-              type="checkbox"
-              checked={autoImprimir}
-              onChange={(event) => setAutoImprimir(event.target.checked)}
-            />
-            Imprimir nuevos automaticamente
-          </label>
-          <a
-            href="/admin/cuenta-corriente"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
-          >
-            Cuenta corriente
-          </a>
-          <a
-            href="/reparto"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
-          >
-            Reparto
-          </a>
-          <button
-            type="button"
-            onClick={salirAdmin}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black shadow"
-          >
-            Salir
-          </button>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="/admin/cuenta-corriente"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black shadow-sm"
+              >
+                Cuenta corriente
+              </a>
+              <a
+                href="/reparto"
+                className="rounded-2xl bg-slate-950 px-4 py-3 font-black text-white shadow-sm"
+              >
+                Reparto
+              </a>
+              <button
+                type="button"
+                onClick={salirAdmin}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black shadow-sm"
+              >
+                Salir
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-4 grid gap-3 rounded-2xl bg-white p-4 shadow">
+        <div className="mb-4 grid gap-3 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap gap-2">
               {([
@@ -527,7 +507,7 @@ export default function AdminPedidosPage() {
                   key={valor}
                   type="button"
                   onClick={() => setFiltroReporte(valor)}
-                  className={`rounded-xl px-4 py-3 font-black ${
+                  className={`rounded-2xl px-4 py-3 font-black ${
                     filtroReporte === valor
                       ? "bg-green-600 text-white"
                       : "border border-slate-300 bg-white text-slate-950"
@@ -536,7 +516,7 @@ export default function AdminPedidosPage() {
                   {texto}
                 </button>
               ))}
-              <label className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-black">
+              <label className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-3 py-2 font-black">
                 <span className="text-sm text-slate-600">Mes</span>
                 <input
                   type="month"
@@ -554,7 +534,7 @@ export default function AdminPedidosPage() {
               onClick={() => setMontosVisibles((visible) => !visible)}
               aria-label={montosVisibles ? "Ocultar montos" : "Ver montos"}
               title={montosVisibles ? "Ocultar montos" : "Ver montos"}
-              className={`flex items-center gap-2 rounded-xl px-4 py-3 font-black ${
+              className={`flex items-center gap-2 rounded-2xl px-4 py-3 font-black ${
                 montosVisibles ? "bg-slate-950 text-white" : "border border-slate-300 bg-white text-slate-950"
               }`}
             >
@@ -563,15 +543,15 @@ export default function AdminPedidosPage() {
             </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-slate-100 p-4">
+            <div className="rounded-2xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Pedidos</p>
               <strong className="text-2xl">{pedidos.length}</strong>
             </div>
-            <div className="rounded-xl bg-slate-100 p-4">
+            <div className="rounded-2xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Total vendido</p>
               <strong className="text-2xl">{montoAdmin(totalVendido)}</strong>
             </div>
-            <div className="rounded-xl bg-slate-100 p-4">
+            <div className="rounded-2xl bg-slate-100 p-4">
               <p className="m-0 text-sm font-bold text-slate-600">Promedio</p>
               <strong className="text-2xl">{montoAdmin(promedioPedido)}</strong>
             </div>
