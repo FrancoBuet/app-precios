@@ -37,6 +37,10 @@ function precio(valor: number | null | undefined) {
   return money.format(Math.round(Number(valor || 0)));
 }
 
+function normalizarTelefono(telefono: string | null | undefined) {
+  return String(telefono || "").replace(/\D/g, "");
+}
+
 function inicioDelDia(fecha: Date) {
   const inicio = new Date(fecha);
   inicio.setHours(0, 0, 0, 0);
@@ -105,6 +109,15 @@ function recorridoMapsUrl(pedidos: Pedido[]) {
   });
   if (waypoints) params.set("waypoints", waypoints);
   return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function detallePedidoCuentaCorriente(pedido: Pedido) {
+  const titulo = pedido.numero ? `Pedido #${pedido.numero}` : "Pedido";
+  const productos = (pedido.items || [])
+    .map((item) => `- ${item.texto || item.nombre || "Producto"}: $ ${precio(item.total)}`)
+    .join("\n");
+  const envio = Number(pedido.envio || 0) > 0 ? `\n- Envio: $ ${precio(pedido.envio)}` : "";
+  return `${titulo}\n${productos}${envio}`;
 }
 
 export default function RepartoPage() {
@@ -237,6 +250,90 @@ export default function RepartoPage() {
       forma_pago,
       entregado_at: new Date().toISOString(),
     });
+  }
+
+  async function enviarACuentaCorriente(pedido: Pedido) {
+    const nombre = (pedido.cliente_nombre || "").trim();
+    if (!nombre) {
+      alert("Este pedido no tiene nombre de cliente.");
+      return;
+    }
+
+    const { data: movimientoExistente, error: errorMovimientoExistente } = await supabase
+      .from("cuenta_corriente_movimientos")
+      .select("id")
+      .eq("pedido_id", pedido.id)
+      .maybeSingle();
+
+    if (errorMovimientoExistente) {
+      alert(`No se pudo revisar cuenta corriente. Detalle: ${errorMovimientoExistente.message}`);
+      return;
+    }
+
+    const telefonoLimpio = normalizarTelefono(pedido.cliente_telefono);
+    let clienteId = "";
+
+    if (!movimientoExistente?.id) {
+      if (telefonoLimpio) {
+        const { data } = await supabase
+          .from("clientes_cuenta_corriente")
+          .select("id")
+          .eq("telefono_normalizado", telefonoLimpio)
+          .maybeSingle();
+        if (data?.id) clienteId = data.id;
+      }
+
+      if (!clienteId) {
+        const { data, error } = await supabase
+          .from("clientes_cuenta_corriente")
+          .insert({
+            nombre,
+            telefono: pedido.cliente_telefono || null,
+            telefono_normalizado: telefonoLimpio || null,
+            direccion: pedido.direccion || null,
+          })
+          .select("id")
+          .single();
+
+        if (error || !data?.id) {
+          alert(`No se pudo crear el cliente en cuenta corriente. Detalle: ${error?.message || "sin detalle"}`);
+          return;
+        }
+        clienteId = data.id;
+      }
+
+      const { error: movError } = await supabase.from("cuenta_corriente_movimientos").insert({
+        cliente_id: clienteId,
+        pedido_id: pedido.id,
+        tipo: "pedido",
+        detalle: detallePedidoCuentaCorriente(pedido),
+        monto: Number(pedido.total || 0),
+      });
+
+      if (movError) {
+        alert(`No se pudo cargar la cuenta corriente. Detalle: ${movError.message}`);
+        return;
+      }
+    }
+
+    const { error: pedidoError } = await supabase
+      .from("pedidos")
+      .update({
+        estado: "cuenta_corriente",
+        estado_reparto: "entregado",
+        forma_pago: "cuenta_corriente",
+        nota_reparto: notas[pedido.id] ?? pedido.nota_reparto ?? null,
+        entregado_at: new Date().toISOString(),
+      })
+      .eq("id", pedido.id);
+
+    if (pedidoError) {
+      alert(`La cuenta corriente se cargo, pero no se pudo marcar el pedido. Detalle: ${pedidoError.message}`);
+      return;
+    }
+
+    alert(movimientoExistente?.id ? "El pedido ya estaba en cuenta corriente." : "Pedido agregado a cuenta corriente.");
+    cargarPedidos(true);
   }
 
   if (!autorizado) {
@@ -450,7 +547,7 @@ export default function RepartoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => marcarEntregado(pedido, "cuenta_corriente")}
+                      onClick={() => enviarACuentaCorriente(pedido)}
                       className="rounded-xl bg-indigo-600 px-4 py-3 font-black text-white"
                     >
                       Cuenta corriente
