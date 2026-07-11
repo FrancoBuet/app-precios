@@ -62,6 +62,21 @@ function etiquetaPago(pago?: string | null) {
   return "Sin registrar";
 }
 
+function claseEstado(estado?: string | null) {
+  if (estado === "en_camino") return "bg-amber-100 text-amber-800 ring-amber-200";
+  if (estado === "entregado") return "bg-green-100 text-green-800 ring-green-200";
+  if (estado === "no_entregado") return "bg-red-100 text-red-800 ring-red-200";
+  return "bg-slate-100 text-slate-700 ring-slate-200";
+}
+
+function clasePago(pago?: string | null) {
+  if (pago === "efectivo") return "bg-emerald-100 text-emerald-800 ring-emerald-200";
+  if (pago === "transferencia") return "bg-sky-100 text-sky-800 ring-sky-200";
+  if (pago === "cuenta_corriente") return "bg-indigo-100 text-indigo-800 ring-indigo-200";
+  if (pago === "sin_pagar") return "bg-red-100 text-red-800 ring-red-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
 function mapsUrl(direccion: string | null | undefined) {
   const texto = `${direccion || ""}, Esperanza, Santa Fe, Argentina`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(texto)}`;
@@ -457,59 +472,79 @@ export default function RepartoPage() {
         ) : (
           <div className="grid gap-3">
             {pedidosFiltrados.map((pedido) => (
-              <article key={pedido.id} className="rounded-2xl bg-white p-4 shadow">
-                <div className="mb-3 flex items-start justify-between gap-3 border-b pb-3">
-                  <div>
-                    <h2 className="m-0 text-xl font-black">
-                      {pedido.numero ? `#${pedido.numero} - ` : ""}
-                      {pedido.cliente_nombre || "Sin nombre"}
-                    </h2>
-                    <p className="m-0 text-sm font-bold text-slate-600">
-                      {etiquetaEstado(pedido.estado_reparto)} - {etiquetaPago(pedido.forma_pago)}
-                    </p>
+              <article key={pedido.id} className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+                <div className="bg-gradient-to-br from-white to-slate-50 p-4">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="m-0 text-xs font-black uppercase tracking-wide text-slate-500">
+                        {pedido.numero ? `Pedido #${pedido.numero}` : "Pedido"}
+                      </p>
+                      <h2 className="m-0 break-words text-2xl font-black leading-tight">
+                        {pedido.cliente_nombre || "Sin nombre"}
+                      </h2>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1 ${claseEstado(
+                            pedido.estado_reparto
+                          )}`}
+                        >
+                          {etiquetaEstado(pedido.estado_reparto)}
+                        </span>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1 ${clasePago(
+                            pedido.forma_pago
+                          )}`}
+                        >
+                          {etiquetaPago(pedido.forma_pago)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 rounded-2xl bg-slate-950 px-3 py-2 text-right text-white shadow-sm">
+                      <p className="m-0 text-[10px] font-black uppercase text-slate-300">Total</p>
+                      <strong className="text-xl leading-none">$ {precio(pedido.total)}</strong>
+                    </div>
                   </div>
-                  <strong className="text-2xl">$ {precio(pedido.total)}</strong>
+
+                  <div className="grid gap-2 rounded-2xl bg-white p-3 text-sm ring-1 ring-slate-200">
+                    <p className="m-0"><strong>Tel:</strong> {pedido.cliente_telefono || "-"}</p>
+                    <p className="m-0"><strong>Direccion:</strong> {pedido.direccion || "-"}</p>
+                    {pedido.notas ? <p className="m-0"><strong>Aclaraciones:</strong> {pedido.notas}</p> : null}
+                  </div>
                 </div>
 
-                <div className="mb-3 grid gap-1 text-sm">
-                  <p className="m-0"><strong>Tel:</strong> {pedido.cliente_telefono || "-"}</p>
-                  <p className="m-0"><strong>Direccion:</strong> {pedido.direccion || "-"}</p>
-                  {pedido.notas ? <p className="m-0"><strong>Aclaraciones:</strong> {pedido.notas}</p> : null}
-                </div>
-
-                <div className="mb-3 grid gap-1 border-y py-3 text-sm">
+                <div className="mx-4 mb-3 mt-4 overflow-hidden rounded-2xl border border-slate-200 text-sm">
                   {(pedido.items || []).map((item, index) => (
-                    <div key={index} className="flex justify-between gap-3">
-                      <span className="font-bold">{item.texto || item.nombre}</span>
-                      <span>$ {precio(item.total)}</span>
+                    <div key={index} className="flex justify-between gap-3 border-b border-slate-100 px-3 py-2 last:border-b-0">
+                      <span className="font-black leading-snug">{item.texto || item.nombre}</span>
+                      <span className="shrink-0 font-bold text-slate-700">$ {precio(item.total)}</span>
                     </div>
                   ))}
                   {Number(pedido.envio || 0) > 0 ? (
-                    <div className="flex justify-between gap-3">
-                      <span className="font-bold">Envio</span>
-                      <span>$ {precio(pedido.envio)}</span>
+                    <div className="flex justify-between gap-3 bg-green-50 px-3 py-2">
+                      <span className="font-black">Envio</span>
+                      <span className="font-bold text-green-800">$ {precio(pedido.envio)}</span>
                     </div>
                   ) : null}
                 </div>
 
-                <div className="mb-3 grid grid-cols-2 gap-2">
+                <div className="mx-4 mb-3 grid grid-cols-2 gap-2">
                   <a
                     href={mapsUrl(pedido.direccion)}
                     target="_blank"
                     rel="noopener"
-                    className="rounded-xl bg-blue-600 px-4 py-3 text-center font-black text-white"
+                    className="rounded-2xl bg-blue-600 px-4 py-3 text-center font-black text-white shadow-sm"
                   >
                     Abrir Maps
                   </a>
                   {pedido.cliente_telefono ? (
                     <a
                       href={`tel:${pedido.cliente_telefono}`}
-                      className="rounded-xl bg-slate-950 px-4 py-3 text-center font-black text-white"
+                      className="rounded-2xl bg-slate-950 px-4 py-3 text-center font-black text-white shadow-sm"
                     >
                       Llamar
                     </a>
                   ) : (
-                    <span className="rounded-xl bg-slate-200 px-4 py-3 text-center font-black text-slate-500">Sin telefono</span>
+                    <span className="rounded-2xl bg-slate-200 px-4 py-3 text-center font-black text-slate-500">Sin telefono</span>
                   )}
                 </div>
 
@@ -517,14 +552,14 @@ export default function RepartoPage() {
                   value={notas[pedido.id] || ""}
                   onChange={(event) => setNotas((actual) => ({ ...actual, [pedido.id]: event.target.value }))}
                   placeholder="Nota de reparto"
-                  className="mb-3 min-h-20 w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
+                  className="mx-4 mb-3 min-h-20 w-[calc(100%-2rem)] rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold outline-none focus:border-blue-500 focus:bg-white"
                 />
 
-                <div className="grid gap-2">
+                <div className="grid gap-2 p-4 pt-0">
                   <button
                     type="button"
                     onClick={() => actualizarPedido(pedido, { estado_reparto: "en_camino" })}
-                    className="rounded-xl bg-amber-500 px-4 py-3 font-black text-white"
+                    className="rounded-2xl bg-amber-500 px-4 py-3 font-black text-white shadow-sm"
                   >
                     En camino
                   </button>
@@ -532,14 +567,14 @@ export default function RepartoPage() {
                     <button
                       type="button"
                       onClick={() => marcarEntregado(pedido, "efectivo")}
-                      className="rounded-xl bg-green-600 px-4 py-3 font-black text-white"
+                      className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm"
                     >
                       Entregado efectivo
                     </button>
                     <button
                       type="button"
                       onClick={() => marcarEntregado(pedido, "transferencia")}
-                      className="rounded-xl bg-green-600 px-4 py-3 font-black text-white"
+                      className="rounded-2xl bg-green-600 px-4 py-3 font-black text-white shadow-sm"
                     >
                       Entregado transferencia
                     </button>
@@ -548,7 +583,7 @@ export default function RepartoPage() {
                     <button
                       type="button"
                       onClick={() => enviarACuentaCorriente(pedido)}
-                      className="rounded-xl bg-indigo-600 px-4 py-3 font-black text-white"
+                      className="rounded-2xl bg-indigo-600 px-4 py-3 font-black text-white shadow-sm"
                     >
                       Cuenta corriente
                     </button>
@@ -561,7 +596,7 @@ export default function RepartoPage() {
                           entregado_at: null,
                         })
                       }
-                      className="rounded-xl bg-red-600 px-4 py-3 font-black text-white"
+                      className="rounded-2xl bg-red-600 px-4 py-3 font-black text-white shadow-sm"
                     >
                       No estaba
                     </button>
@@ -569,7 +604,7 @@ export default function RepartoPage() {
                   <button
                     type="button"
                     onClick={() => actualizarPedido(pedido, { nota_reparto: notas[pedido.id] || "" })}
-                    className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-black"
+                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black shadow-sm"
                   >
                     Guardar nota
                   </button>
