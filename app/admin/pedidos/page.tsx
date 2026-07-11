@@ -10,6 +10,7 @@ type ItemPedido = {
 };
 
 type FiltroReporte = "hoy" | "mes" | "todos";
+type VistaReporte = "pedidos" | "clientes";
 
 type Pedido = {
   id: string;
@@ -197,6 +198,7 @@ export default function AdminPedidosPage() {
   const [pin, setPin] = useState("");
   const [errorPin, setErrorPin] = useState("");
   const [filtroReporte, setFiltroReporte] = useState<FiltroReporte>("hoy");
+  const [vistaReporte, setVistaReporte] = useState<VistaReporte>("pedidos");
   const [mesReporte, setMesReporte] = useState(claveMesActual());
   const [hayActualizacion, setHayActualizacion] = useState(false);
   const [montosVisibles, setMontosVisibles] = useState(false);
@@ -499,6 +501,23 @@ export default function AdminPedidosPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap gap-2">
               {([
+                ["pedidos", "Pedidos"],
+                ["clientes", "Top clientes"],
+              ] as const).map(([valor, texto]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setVistaReporte(valor)}
+                  className={`rounded-2xl px-4 py-3 font-black ${
+                    vistaReporte === valor
+                      ? "bg-slate-950 text-white"
+                      : "border border-slate-300 bg-white text-slate-950"
+                  }`}
+                >
+                  {texto}
+                </button>
+              ))}
+              {([
                 ["hoy", "Hoy"],
                 ["mes", "Mes"],
                 ["todos", "Todos"],
@@ -559,7 +578,7 @@ export default function AdminPedidosPage() {
           <p className="m-0 text-sm font-bold text-slate-600">
             Envios cobrados: {montoAdmin(totalEnvios)}{filtroReporte === "todos" ? " - Mostrando hasta 500 pedidos" : ""}
           </p>
-          {clientesReporte.length > 0 ? (
+          {vistaReporte === "clientes" && clientesReporte.length > 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-3">
               <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
                 <div>
@@ -590,16 +609,20 @@ export default function AdminPedidosPage() {
               </div>
             </div>
           ) : null}
-          <input
-            value={busquedaPedidos}
-            onChange={(event) => setBusquedaPedidos(event.target.value)}
-            placeholder="Buscar pedido por nombre, telefono, direccion o producto"
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
-          />
-          {busquedaPedidos.trim() ? (
-            <p className="m-0 text-sm font-bold text-slate-600">
-              Mostrando {pedidosFiltrados.length} de {pedidos.length} pedidos
-            </p>
+          {vistaReporte === "pedidos" ? (
+            <>
+              <input
+                value={busquedaPedidos}
+                onChange={(event) => setBusquedaPedidos(event.target.value)}
+                placeholder="Buscar pedido por nombre, telefono, direccion o producto"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 font-bold"
+              />
+              {busquedaPedidos.trim() ? (
+                <p className="m-0 text-sm font-bold text-slate-600">
+                  Mostrando {pedidosFiltrados.length} de {pedidos.length} pedidos
+                </p>
+              ) : null}
+            </>
           ) : null}
         </div>
 
@@ -619,6 +642,10 @@ export default function AdminPedidosPage() {
           <div className="rounded-2xl bg-amber-50 p-5 font-bold text-amber-900 shadow">
             No se pudo leer la tabla de pedidos. Ejecuta primero el SQL de <code>supabase-pedidos.sql</code>.
           </div>
+        ) : vistaReporte === "clientes" ? (
+          clientesReporte.length === 0 ? (
+            <div className="rounded-2xl bg-white p-5 font-bold shadow">No hay clientes para este filtro.</div>
+          ) : null
         ) : pedidos.length === 0 ? (
           <div className="rounded-2xl bg-white p-5 font-bold shadow">No hay pedidos para este filtro.</div>
         ) : pedidosFiltrados.length === 0 ? (
