@@ -548,13 +548,6 @@ export default function RepartoPage() {
                   )}
                 </div>
 
-                <textarea
-                  value={notas[pedido.id] || ""}
-                  onChange={(event) => setNotas((actual) => ({ ...actual, [pedido.id]: event.target.value }))}
-                  placeholder="Nota de reparto"
-                  className="mx-4 mb-3 min-h-20 w-[calc(100%-2rem)] rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold outline-none focus:border-blue-500 focus:bg-white"
-                />
-
                 <div className="grid gap-2 p-4 pt-0">
                   <button
                     type="button"
@@ -601,13 +594,6 @@ export default function RepartoPage() {
                       No estaba
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => actualizarPedido(pedido, { nota_reparto: notas[pedido.id] || "" })}
-                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black shadow-sm"
-                  >
-                    Guardar nota
-                  </button>
                 </div>
               </article>
             ))}
