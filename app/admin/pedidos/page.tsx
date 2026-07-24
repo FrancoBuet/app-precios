@@ -27,6 +27,15 @@ type Pedido = {
   impreso_at: string | null;
 };
 
+type ClienteReporte = {
+  nombre: string;
+  telefono: string;
+  direccion: string;
+  pedidos: number;
+  total: number;
+  ultimaCompra: string;
+};
+
 const money = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PEDIDOS_PIN || "2026";
 
@@ -186,6 +195,154 @@ function htmlTicket(pedido: Pedido) {
         <script>
           window.addEventListener("load", () => window.print());
         </script>
+      </body>
+    </html>`;
+}
+
+function htmlReporteVentas({
+  titulo,
+  pedidos,
+  clientes,
+  totalVendido,
+  totalEnvios,
+  promedioPedido,
+}: {
+  titulo: string;
+  pedidos: Pedido[];
+  clientes: ClienteReporte[];
+  totalVendido: number;
+  totalEnvios: number;
+  promedioPedido: number;
+}) {
+  const generado = new Date().toLocaleString("es-AR");
+
+  return `<!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Reporte de ventas</title>
+        <style>
+          @page { size: A4; margin: 14mm; }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            color: #0f172a;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+          }
+          h1, h2, p { margin: 0; }
+          h1 { font-size: 24px; font-weight: 900; }
+          h2 { margin: 18px 0 8px; font-size: 16px; font-weight: 900; }
+          .marca { color: #047857; font-size: 12px; font-weight: 900; letter-spacing: .04em; }
+          .sub { margin-top: 4px; color: #475569; font-weight: 700; }
+          .resumen {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 18px 0;
+          }
+          .card {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px;
+            background: #f8fafc;
+          }
+          .label { color: #475569; font-size: 11px; font-weight: 700; }
+          .valor { margin-top: 4px; font-size: 18px; font-weight: 900; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 7px 6px;
+            text-align: left;
+            vertical-align: top;
+          }
+          th { background: #f1f5f9; font-size: 11px; text-transform: uppercase; }
+          .num { text-align: right; white-space: nowrap; }
+          .cliente { font-weight: 900; }
+          .muted { color: #64748b; font-size: 11px; }
+          .print {
+            margin: 0 0 14px;
+            border: 0;
+            border-radius: 10px;
+            background: #020617;
+            color: white;
+            padding: 10px 14px;
+            font-weight: 900;
+            cursor: pointer;
+          }
+          @media print { .print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <button class="print" onclick="window.print()">Imprimir o guardar PDF</button>
+        <p class="marca">EL NONO COQUI</p>
+        <h1>Reporte de ventas</h1>
+        <p class="sub">${escaparHtml(titulo)} - Generado: ${escaparHtml(generado)}</p>
+
+        <section class="resumen">
+          <div class="card"><p class="label">Pedidos</p><p class="valor">${pedidos.length}</p></div>
+          <div class="card"><p class="label">Total vendido</p><p class="valor">$ ${precio(totalVendido)}</p></div>
+          <div class="card"><p class="label">Envios</p><p class="valor">$ ${precio(totalEnvios)}</p></div>
+          <div class="card"><p class="label">Promedio</p><p class="valor">$ ${precio(promedioPedido)}</p></div>
+        </section>
+
+        <h2>Clientes del periodo</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Telefono</th>
+              <th>Pedidos</th>
+              <th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${clientes
+              .map(
+                (cliente) => `
+                  <tr>
+                    <td><span class="cliente">${escaparHtml(cliente.nombre)}</span><br><span class="muted">${escaparHtml(cliente.direccion)}</span></td>
+                    <td>${escaparHtml(cliente.telefono)}</td>
+                    <td>${cliente.pedidos}</td>
+                    <td class="num">$ ${precio(cliente.total)}</td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
+
+        <h2>Pedidos del periodo</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Telefono</th>
+              <th>Estado</th>
+              <th class="num">Envio</th>
+              <th class="num">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pedidos
+              .map(
+                (pedido) => `
+                  <tr>
+                    <td>${escaparHtml(new Date(pedido.created_at).toLocaleDateString("es-AR"))}</td>
+                    <td>${pedido.numero ? `#${escaparHtml(pedido.numero)}` : "-"}</td>
+                    <td><span class="cliente">${escaparHtml(pedido.cliente_nombre || "Sin nombre")}</span><br><span class="muted">${escaparHtml(pedido.direccion || "-")}</span></td>
+                    <td>${escaparHtml(pedido.cliente_telefono || "-")}</td>
+                    <td>${escaparHtml(pedido.estado)}</td>
+                    <td class="num">$ ${precio(pedido.envio)}</td>
+                    <td class="num">$ ${precio(pedido.total)}</td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
       </body>
     </html>`;
 }
@@ -380,22 +537,12 @@ export default function AdminPedidosPage() {
   const totalEnvios = pedidos.reduce((sum, pedido) => sum + Number(pedido.envio || 0), 0);
   const promedioPedido = pedidos.length > 0 ? totalVendido / pedidos.length : 0;
   const textoFiltro = etiquetaFiltro(filtroReporte, mesReporte);
-  const resumenFiltros = `${vistaReporte === "clientes" ? "Top clientes" : "Pedidos"} · ${
+  const resumenFiltros = `${vistaReporte === "clientes" ? "Top clientes" : "Pedidos"} - ${
     filtroReporte === "hoy" ? "Hoy" : filtroReporte === "mes" ? nombreMes(mesReporte) : "Todos"
   }`;
   const montoAdmin = (valor: number | null | undefined) => (montosVisibles ? `$ ${precio(valor)}` : "*****");
   const clientesReporte = useMemo(() => {
-    const mapa = new Map<
-      string,
-      {
-        nombre: string;
-        telefono: string;
-        direccion: string;
-        pedidos: number;
-        total: number;
-        ultimaCompra: string;
-      }
-    >();
+    const mapa = new Map<string, ClienteReporte>();
 
     for (const pedido of pedidos) {
       const nombre = (pedido.cliente_nombre || "Sin nombre").trim();
@@ -441,6 +588,27 @@ export default function AdminPedidosPage() {
   function actualizarAhora() {
     cargarPedidos();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function imprimirReporteVentas() {
+    const ventana = window.open("", "_blank", "width=900,height=700");
+    if (!ventana) {
+      alert("El navegador bloqueo la ventana del reporte. Habilita ventanas emergentes.");
+      return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(
+      htmlReporteVentas({
+        titulo: textoFiltro,
+        pedidos,
+        clientes: clientesReporte,
+        totalVendido,
+        totalEnvios,
+        promedioPedido,
+      })
+    );
+    ventana.document.close();
   }
 
   if (!autorizado) {
@@ -527,6 +695,13 @@ export default function AdminPedidosPage() {
               <EyeIcon hidden={!montosVisibles} />
               {montosVisibles ? "Ocultar montos" : "Ver montos"}
             </button>
+            <button
+              type="button"
+              onClick={imprimirReporteVentas}
+              className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-black text-slate-950"
+            >
+              Imprimir reporte
+            </button>
           </div>
           {filtrosAbiertos ? (
             <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -547,7 +722,7 @@ export default function AdminPedidosPage() {
                           : "border border-slate-300 bg-white text-slate-950"
                       }`}
                     >
-                      {vistaReporte === valor ? "✓ " : ""}
+                      {vistaReporte === valor ? "OK " : ""}
                       {texto}
                     </button>
                   ))}
@@ -571,7 +746,7 @@ export default function AdminPedidosPage() {
                           : "border border-slate-300 bg-white text-slate-950"
                       }`}
                     >
-                      {filtroReporte === valor ? "✓ " : ""}
+                      {filtroReporte === valor ? "OK " : ""}
                       {texto}
                     </button>
                   ))}
